@@ -1,25 +1,25 @@
 <?php
 require_once __DIR__ . '/../src/controllers/noteController.php';
 
-$route = $_GET['route'] ?? 'notes.index';
+$route = $_GET['route'] ?? 'customer.index';
 
 
 switch ($route) {
 
-    case 'notes.index':
-        listNotes($pdo);
+    case 'customer.index':
+        listCustomers($pdo);
         break;
-    case 'notes.create':
-        createNote($pdo, $_POST['title'] ?? '', $_POST['content'] ?? '');
+    case 'customer.create':
+        createCustomer($pdo, $_POST['email'] ?? '', $_POST['name'] ?? '');
         break;
-    case 'notes.edit':
+    case 'customer.edit':
         if (isset($_GET['id'])) {
-            editNote($pdo, $_GET['id'], $_POST['title'] ?? '', $_POST['content'] ?? '');
+            editCustomer($pdo, $_GET['id'], $_POST['title'] ?? '', $_POST['content'] ?? '');
         }
         break;
-    case 'notes.delete':
+    case 'customer.delete':
         if (isset($_GET['id'])) {
-            removeNote($pdo, $_GET['id']);
+            removeCustomer($pdo, $_GET['id']);
         }
         break;
     default:

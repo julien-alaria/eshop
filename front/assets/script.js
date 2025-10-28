@@ -3,8 +3,8 @@ const API_BASE = "http://localhost:8000";
 
 // Routes attendues par ton router PHP (?route=notes.*)
 const ROUTES = {
-  index: `${API_BASE}/?route=notes.index`,
-  create: `${API_BASE}/?route=notes.create`,
+  index: `${API_BASE}/?route=customer.index`,
+  create: `${API_BASE}/?route=customer.create`,
   edit: (id) => `${API_BASE}/?route=notes.edit&id=${encodeURIComponent(id)}`,
   delete: (id) =>
     `${API_BASE}/?route=notes.delete&id=${encodeURIComponent(id)}&delete=1`,
@@ -15,10 +15,11 @@ const noteCache = new Map();
 
 // --------- API calls ----------
 
-async function fetchNotes() {
+async function fetchCustomers() {
   const res = await fetch(ROUTES.index, {
     headers: { Accept: "application/json" },
   });
+  console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}`);
   if (!res.ok) throw new Error("Erreur GET");
   const data = await res.json();
   // Controller renvoie un tableau brut
@@ -29,11 +30,11 @@ async function fetchNotes() {
   return rows;
 }
 
-async function createNote(payload) {
+async function createCustomer(payload) {
   // Le controller lit $_POST['title'] et $_POST['content'] -> form-urlencoded
   const body = new URLSearchParams({
-    title: (payload.title ?? "").toString().trim(),
-    content: (payload.content ?? "").toString().trim(),
+    email: (payload.email ?? "").toString().trim(),
+    name : (payload.name ?? "").toString().trim(),
   });
 
   const res = await fetch(ROUTES.create, {
@@ -116,20 +117,20 @@ function renderList(items) {
   }
 }
 
-function renderItem(note) {
+function renderItem(customer) {
   const li = document.createElement("li");
   li.className = "list__item";
-  li.dataset.id = String(note.id);
+  li.dataset.id = String(customer.id);
 
   const title = document.createElement("strong");
-  title.textContent = note.title || "(Sans titre)";
+  title.textContent = customer.name || "(Sans titre)";
 
   const content = document.createElement("p");
-  content.textContent = note.content || "";
+  content.textContent = customer.email || "";
 
   const small = document.createElement("small");
   small.className = "muted";
-  const dt = note.created_at ? new Date(note.created_at) : null;
+  const dt = customer.created_at ? new Date(customer.created_at) : null;
   small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
 
   // Actions: Éditer / Supprimer
@@ -143,14 +144,14 @@ function renderItem(note) {
   editBtn.className = "btn btn-ghost";
   editBtn.textContent = "Éditer";
   editBtn.dataset.action = "edit";
-  editBtn.dataset.id = String(note.id);
+  editBtn.dataset.id = String(customer.id);
 
   const delBtn = document.createElement("button");
   delBtn.type = "button";
   delBtn.className = "btn btn-ghost";
   delBtn.textContent = "Supprimer";
   delBtn.dataset.action = "delete";
-  delBtn.dataset.id = String(note.id);
+  delBtn.dataset.id = String(customer.id);
 
   actions.append(editBtn, delBtn);
 
@@ -159,7 +160,7 @@ function renderItem(note) {
 }
 
 // Passe un <li> en mode édition (inline)
-function enterEditMode(li, note) {
+function enterEditMode(li, customer) {
   li.innerHTML = ""; // reset
 
   const form = document.createElement("form");
@@ -167,19 +168,20 @@ function enterEditMode(li, note) {
 
   const titleLabel = document.createElement("label");
   titleLabel.className = "label";
-  titleLabel.textContent = "Titre";
+  titleLabel.textContent = "Nom";
   const titleInput = document.createElement("input");
   titleInput.className = "input";
-  titleInput.value = note.title || "";
+  titleInput.value = customer.name || "";
+  nameInput.name = "name";
   titleInput.required = true;
 
   const contentLabel = document.createElement("label");
   contentLabel.className = "label";
-  contentLabel.textContent = "Contenu";
+  contentLabel.textContent = "Email";
   const contentInput = document.createElement("textarea");
   contentInput.className = "input";
   contentInput.rows = 4;
-  contentInput.value = note.content || "";
+  contentInput.value = customer.email || "";
   contentInput.required = true;
 
   const row = document.createElement("div");
@@ -197,19 +199,19 @@ function enterEditMode(li, note) {
 
   row.append(saveBtn, cancelBtn);
 
-  form.append(titleLabel, titleInput, contentLabel, contentInput, row);
+  form.append(nameLabel, nameInput, emailLabel, emailInput, row);
   li.append(form);
 
   // Submit edit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
-      await editNote(note.id, {
-        title: titleInput.value.trim(),
-        content: contentInput.value.trim(),
+      await editCustomer(note.id, {
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
       });
       // refresh list
-      const items = await fetchNotes();
+      const items = await fetchCustomers();
       renderList(items);
       toast("✅ Modifié");
     } catch (err) {
@@ -219,7 +221,7 @@ function enterEditMode(li, note) {
 
   // Cancel -> re-render item
   cancelBtn.addEventListener("click", () => {
-    const fresh = noteCache.get(String(note.id)) || note;
+    const fresh = customerCache.get(String(note.id)) || note;
     const freshLi = renderItem(fresh);
     li.replaceWith(freshLi);
   });
@@ -241,13 +243,13 @@ function toast(message, isError = false) {
 // --------- Boot ----------
 
 async function init() {
-  const form = document.getElementById("noteForm");
+  const form = document.getElementById("CustomerForm");
   const refreshBtn = document.getElementById("refreshBtn");
   const themeToggle = document.getElementById("themeToggle");
   const listEl = document.getElementById("list");
 
   try {
-    renderList(await fetchNotes());
+    renderList(await fetchCustomers());
   } catch (e) {
     console.error(e);
   }
@@ -257,13 +259,13 @@ async function init() {
     ev.preventDefault();
     const fd = new FormData(form);
     const payload = {
-      title: (fd.get("title") || "").toString().trim(),
-      content: (fd.get("content") || "").toString().trim(),
+      email: (fd.get("email") || "").toString().trim(),
+      name: (fd.get("name") || "").toString().trim(),
     };
     try {
-      await createNote(payload);
+      await createCustomer(payload);
       form.reset();
-      renderList(await fetchNotes());
+      renderList(await fetchCustomers());
       toast("✅ Ajouté");
     } catch (e) {
       toast("❌ " + e.message, true);
@@ -273,7 +275,7 @@ async function init() {
   // Rafraîchir
   refreshBtn.addEventListener("click", async () => {
     try {
-      renderList(await fetchNotes());
+      renderList(await fetchCustomers());
     } catch (e) {
       console.error(e);
     }
@@ -297,7 +299,7 @@ async function init() {
       if (!confirm("Supprimer cette note ?")) return;
       try {
         await deleteNote(id);
-        renderList(await fetchNotes());
+        renderList(await fetchCustomers());
         toast("🗑️ Supprimé");
       } catch (err) {
         toast("❌ " + (err?.message || "Erreur suppression"), true);

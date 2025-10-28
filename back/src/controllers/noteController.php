@@ -50,7 +50,7 @@ function s(string $v): string
 
 /** ---------- Actions ---------- */
 
-function createNote($pdo): void
+function createCustomer($pdo): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         respond_error('Method Not Allowed', 405, ['allowed' => ['POST', 'OPTIONS']]);
@@ -58,18 +58,18 @@ function createNote($pdo): void
 
     $input = parsed_body();
 
-    $title   = s((string)($input['title']   ?? ''));
-    $content = s((string)($input['content'] ?? ''));
+    $email   = s((string)($input['email']   ?? ''));
+    $name = s((string)($input['name'] ?? ''));
 
-    if ($title === '' || $content === '') {
+    if ($email === '' || $name === '') {
         respond_error('title et content sont requis', 422); // HTTP Code erreur
     }
 
-    addNote($pdo, $title, $content);
+    addCustomer($pdo, $email, $name);
     respond_json(['message' => 'success'], 201);
 }
 
-function editNote($pdo, $id): void
+function editCustomer($pdo, $id): void
 {
     if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
         respond_error('Method Not Allowed', 405, ['allowed' => ['POST', 'OPTIONS']]);
@@ -81,24 +81,24 @@ function editNote($pdo, $id): void
     }
 
     $in = parsed_body();
-    $title   = s((string)($in['title']   ?? ''));
-    $content = s((string)($in['content'] ?? ''));
+    $email   = s((string)($in['email']   ?? ''));
+    $name = s((string)($in['name'] ?? ''));
 
-    if ($title === '' || $content === '') {
+    if ($email === '' || $name === '') {
         respond_error('title et content sont requis', 422);
     }
 
-    updateNote($pdo, $id, $title, $content);
+    updateCustomer($pdo, $id, $email, $name);
     respond_json(['message' => 'updated']);
 }
 
-function listNotes($pdo): void
+function listCustomers($pdo): void
 {
-    $notes = getNotes($pdo);
-    respond_json($notes);
+    $customers = getCustomers($pdo);
+    respond_json($customers);
 }
 
-function removeNote($pdo, $id): void
+function removeCustomer($pdo, $id): void
 {
     $hasDeleteFlag = isset($_GET['delete']) || isset($_POST['delete']);
     if (!$hasDeleteFlag) {
@@ -110,6 +110,6 @@ function removeNote($pdo, $id): void
         respond_error('id invalide', 400);
     }
 
-    deleteNote($pdo, $id);
+    deleteCustomer($pdo, $id);
     respond_json(['message' => 'deleted']);
 }

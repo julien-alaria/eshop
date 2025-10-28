@@ -19,7 +19,7 @@
     <main class="container grid gap-6">
       <section class="card">
         <h2 class="text-lg fw-600 mb-2">Ajouter un Customer</h2>
-        <form id="CustomerForm" class="form grid gap-3">
+        <form id="CustomerForm" methdo="post" class="form grid gap-3">
           <div class="grid gap-2">
             <label for="email" class="label">Email</label>
             <input
@@ -33,13 +33,14 @@
           </div>
           <div class="grid gap-2">
             <label for="name" class="label">Nom</label>
-            <textarea
+            <input type="text" id="name" class="name" placeholder="Votre nom" required>
+            <!-- <textarea
               id="name"
               name="name"
               class="input"
               placeholder="Votre Nom"
               required
-            ></textarea>
+            ></textarea> -->
           </div>
           <button class="btn" type="submit">Ajouter</button>
           <p id="formMsg" class="text-sm"></p>
