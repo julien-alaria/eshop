@@ -1,0 +1,9 @@
+-- Down migration
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT  NOT NULL,
+    sku TEXT NOT NULL UNIQUE,
+    title TEXT NOT NULL,
+    price REAL NOT NULL,
+    stock INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+)

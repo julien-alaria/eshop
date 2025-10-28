@@ -19,26 +19,25 @@
     <main class="container grid gap-6">
       <section class="card">
         <h2 class="text-lg fw-600 mb-2">Ajouter un Customer</h2>
-        <form id="noteForm" class="form grid gap-3">
+        <form id="CustomerForm" class="form grid gap-3">
           <div class="grid gap-2">
-            <label for="title" class="label">Titre</label>
+            <label for="email" class="label">Email</label>
             <input
-              id="title"
-              name="title"
-              type="text"
+              id="email"
+              name="email"
+              type="email"
               class="input"
-              placeholder="Ex: Idée de projet"
+              placeholder="Votre Email"
               required
             />
           </div>
           <div class="grid gap-2">
-            <label for="content" class="label">Contenu</label>
+            <label for="name" class="label">Nom</label>
             <textarea
-              id="content"
-              name="content"
+              id="name"
+              name="name"
               class="input"
-              rows="5"
-              placeholder="Ta note ici..."
+              placeholder="Votre Nom"
               required
             ></textarea>
           </div>
@@ -49,7 +48,7 @@
 
       <section class="card">
         <div class="flex items-center justify-between">
-          <h2 class="text-lg fw-600">Mes notes</h2>
+          <h2 class="text-lg fw-600">Mes Customers</h2>
           <button id="refreshBtn" class="btn btn-ghost">Rafraîchir</button>
         </div>
         <ul id="list" class="list mt-3"></ul>
