@@ -14,12 +14,12 @@ switch ($route) {
         break;
     case 'customer.edit':
         if (isset($_GET['id'])) {
-            editCustomer($pdo, $_GET['id'], $_POST['title'] ?? '', $_POST['content'] ?? '');
+            editCustomer($pdo, $_GET['id'], $_POST['email'] ?? '', $_POST['name'] ?? '');
         }
         break;
     case 'customer.delete':
         if (isset($_GET['id'])) {
-            removeCustomer($pdo, $_GET['id']);
+            deleteCustomer($pdo, $_GET['id']);
         }
         break;
     default:

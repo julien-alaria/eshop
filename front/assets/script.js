@@ -5,9 +5,9 @@ const API_BASE = "http://localhost:8000";
 const ROUTES = {
   index: `${API_BASE}/?route=customer.index`,
   create: `${API_BASE}/?route=customer.create`,
-  edit: (id) => `${API_BASE}/?route=notes.edit&id=${encodeURIComponent(id)}`,
+  edit: (id) => `${API_BASE}/?route=customer.edit&id=${encodeURIComponent(id)}`,
   delete: (id) =>
-    `${API_BASE}/?route=notes.delete&id=${encodeURIComponent(id)}&delete=1`,
+    `${API_BASE}/?route=customer.delete&id=${encodeURIComponent(id)}&delete=1`,
 };
 
 // Petit cache local pour retrouver vite une note par id
@@ -57,10 +57,10 @@ async function createCustomer(payload) {
   return res.json(); // {message: "success"}
 }
 
-async function editNote(id, payload) {
+async function editCustomer(id, payload) {
   const body = new URLSearchParams({
-    title: (payload.title ?? "").toString().trim(),
-    content: (payload.content ?? "").toString().trim(),
+    email: (payload.email ?? "").toString().trim(),
+    name: (payload.name ?? "").toString().trim(),
   });
 
   const res = await fetch(ROUTES.edit(id), {
@@ -82,7 +82,7 @@ async function editNote(id, payload) {
   return res.json(); // {message: "updated"}
 }
 
-async function deleteNote(id) {
+async function deleteCustomer(id) {
   // Le controller supprime si $_GET['delete'] est présent -> GET suffit
   const res = await fetch(ROUTES.delete(id), {
     method: "GET",
@@ -166,23 +166,23 @@ function enterEditMode(li, customer) {
   const form = document.createElement("form");
   form.className = "grid gap-2";
 
-  const titleLabel = document.createElement("label");
-  titleLabel.className = "label";
-  titleLabel.textContent = "Nom";
-  const titleInput = document.createElement("input");
-  titleInput.className = "input";
-  titleInput.value = customer.name || "";
-  nameInput.name = "name";
-  titleInput.required = true;
+  const emailLabel = document.createElement("label");
+  emailLabel.className = "label";
+  emailLabel.textContent = "Email";
+  const emailInput = document.createElement("input");
+  emailInput.className = "input";
+  emailInput.value = customer.email || "";
+  emailInput.email = "email";
+  emailInput.required = true;
 
-  const contentLabel = document.createElement("label");
-  contentLabel.className = "label";
-  contentLabel.textContent = "Email";
-  const contentInput = document.createElement("textarea");
-  contentInput.className = "input";
-  contentInput.rows = 4;
-  contentInput.value = customer.email || "";
-  contentInput.required = true;
+  const nameLabel = document.createElement("label");
+  nameLabel.className = "label";
+  nameLabel.textContent = "name";
+  const nameInput = document.createElement("input");
+  nameInput.className = "input";
+  nameInput.rows = 4;
+  nameInput.value = customer.name || "";
+  nameInput.required = true;
 
   const row = document.createElement("div");
   row.style.display = "flex";
@@ -206,9 +206,9 @@ function enterEditMode(li, customer) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
-      await editCustomer(note.id, {
-        name: nameInput.value.trim(),
+      await editCustomer(customer.id, {
         email: emailInput.value.trim(),
+        name: nameInput.value.trim(),
       });
       // refresh list
       const items = await fetchCustomers();
@@ -298,7 +298,7 @@ async function init() {
     if (btn.dataset.action === "delete") {
       if (!confirm("Supprimer cette note ?")) return;
       try {
-        await deleteNote(id);
+        await deleteCustomer(id);
         renderList(await fetchCustomers());
         toast("🗑️ Supprimé");
       } catch (err) {
