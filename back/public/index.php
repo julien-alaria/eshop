@@ -24,7 +24,7 @@ switch ($route) {
         break;
     case 'customer.research':
         if (isset($_GET['research'])) {
-            findCustomer($pdo, $query);
+            findCustomer($pdo, $_GET['research']);
         }
     default:
         http_response_code(404);
