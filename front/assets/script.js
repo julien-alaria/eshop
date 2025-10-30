@@ -8,7 +8,8 @@ const ROUTES = {
   edit: (id) => `${API_BASE}/?route=customer.edit&id=${encodeURIComponent(id)}`,
   delete: (id) =>
     `${API_BASE}/?route=customer.delete&id=${encodeURIComponent(id)}&delete=1`,
-  research: (query) => `${API_BASE}/?route=customer.research&query=${encodeURIComponent(query)}`,
+  research: (query) =>
+    `${API_BASE}/?route=customer.research&query=${encodeURIComponent(query)}`,
 };
 
 // Petit cache local pour retrouver vite une note par id
@@ -35,7 +36,7 @@ async function createCustomer(payload) {
   // Le controller lit $_POST['title'] et $_POST['content'] -> form-urlencoded
   const body = new URLSearchParams({
     email: (payload.email ?? "").toString().trim(),
-    name : (payload.name ?? "").toString().trim(),
+    name: (payload.name ?? "").toString().trim(),
   });
 
   const res = await fetch(ROUTES.create, {
@@ -100,10 +101,10 @@ async function deleteCustomer(id) {
   return res.json(); // {message: "deleted"}
 }
 
-async function findCustomer(query) {
+async function globalSearch(query) {
   const res = await fetch(ROUTES.research(query), {
     method: "GET",
-    headers: { Accept: "application/json"},
+    headers: { Accept: "application/json" },
   });
 
   if (!res.ok) {
@@ -119,19 +120,19 @@ async function findCustomer(query) {
   console.log("Réponse brute du serveur:", rawText);
 
   if (rawText === "null" || rawText.trim() === "") {
-    return [];
+    return { customers: [], categories: [], products: [] };
   }
 
   let data;
   try {
-      data = JSON.parse(rawText);
+    data = JSON.parse(rawText);
   } catch (e) {
-      console.error("Erreur de parsing JSON:", e);
-      throw new Error("Réponse serveur illisible ou vide."); 
+    console.error("Erreur de parsing JSON:", e);
+    throw new Error("Réponse serveur illisible ou vide.");
   }
-
-  const rows = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
-  return rows;
+  return typeof data === "object" && data !== null
+    ? data
+    : { customers: [], categories: [], products: [] };
 }
 
 // --------- UI rendering ----------
@@ -262,6 +263,93 @@ function enterEditMode(li, customer) {
   });
 }
 
+function renderGlobalResults(results) {
+  const ul = document.getElementById("list");
+  ul.innerHTML = "";
+
+  // Consolidation des tous les tableaux en un seul
+  const allItems = [
+    ...(results.customers || []).map((item) => ({ ...item, type: "customer" })),
+    ...(results.categories || []).map(item => ({...item, type: 'categorie'})),
+    ...(results.products || []).map(item => ({...item, type: 'product', name: item.title, content: `sku: ${item.sku} | price: ${item.price}`})),
+  ];
+
+  if (!allItems.length) {
+    const li = document.createElement("li");
+    li.className = "list__empty";
+    li.textContent = "Aucun résultat trouvé.";
+    ul.appendChild(li);
+    return;
+  }
+
+  for (const it of allItems) {
+    const li = renderGlobalItem(it);
+    ul.appendChild(li);
+  }
+}
+
+function renderGlobalItem(item) {
+  const li = document.createElement("li");
+  li.className = "list__item";
+  li.dataset.id = String(item.id);
+
+  // Titre: Nom de l'entité
+  const title = document.createElement("strong");
+  title.textContent = item.name || item.title || ("Sans nom");
+
+  // Contenu: Informations spécifiques ou description
+  const content = document.createElement("p");
+  content.textContent = item.content || item.email || "";
+
+  // Type: Indication de l'entité (client, catégorie, produit)
+  const typeBadge = document.createElement("span");
+  typeBadge.className = "badge " + item.type.toLowerCase().replace('é', 'e');
+  typeBadge.textContent = item.type;
+
+  const small = document.createElement("small");
+  small.className = "muted";
+  const dt = item.created_at ? new Date(item.created_at) : null;
+  small.textContent = (dt && !isNaN(dt) ? dt.toLocaleString() : "") + " | ";
+
+  // Les actions d'édition/suppression doivent être désactivées pour les catégories/produits
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.gap = ".5rem";
+  actions.style.marginTop = ".25rem";
+
+  // Afficher uniquement les actions du CRUD si c'est un client
+  if (item.type === 'customer') {
+    // Actions: Éditer / Supprimer
+    const edit = document.createElement("div");
+    actions.style.display = "flex";
+    actions.style.gap = ".5rem";
+    actions.style.marginTop = ".25rem";
+
+    const editBtn = document.createElement("button");
+    editBtn.type = "button";
+    editBtn.className = "btn btn-ghost";
+    editBtn.textContent = "Éditer";
+    editBtn.dataset.action = "edit";
+    editBtn.dataset.id = String(item.id);
+
+    const delBtn = document.createElement("button");
+    delBtn.type = "button";
+    delBtn.className = "btn btn-ghost";
+    delBtn.textContent = "Supprimer";
+    delBtn.dataset.action = "delete";
+    delBtn.dataset.id = String(item.id);
+
+    actions.append(editBtn, delBtn);
+  }
+
+  small.prepend(typeBadge);
+
+  li.append(title, content, small, actions);
+  return li;
+
+}
+
+
 // Mini toast (utilise #formMsg existant si présent)
 function toast(message, isError = false) {
   const msg = document.getElementById("formMsg");
@@ -356,19 +444,17 @@ async function init() {
 
     try {
       if (query.length > 0) {
-        const foundCustomers = await findCustomer(query);
+        const globalResults = await globalSearch(query);
 
-        renderList(foundCustomers);
+        renderGlobalResults(globalResults);
       } else {
         renderList(await fetchCustomers());
       }
-
     } catch (e) {
       console.error(e);
       toast("x " + (e.message || "Erreur de recherche"), true);
     }
   });
-
 }
 
 document.addEventListener("DOMContentLoaded", init);

@@ -1,28 +1,5 @@
 <?php
 
-// function getNotes($pdo)
-// {
-//     return $pdo->query("SELECT * FROM notes ORDER BY created_at DESC")->fetchAll();
-// }
-
-// function addNote($pdo, $title, $content)
-// {
-//     $stmt = $pdo->prepare("INSERT INTO notes (title, content) VALUES (?, ?)");
-//     $stmt->execute([$title, $content]);
-// }
-
-// function deleteNote($pdo, $id)
-// {
-//     $stmt = $pdo->prepare("DELETE FROM notes WHERE id = ?");
-//     $stmt->execute([$id]);
-// }
-
-// function updateNote($pdo, $id, $title, $content)
-// {
-//     $stmt = $pdo->prepare("UPDATE notes SET title = ?, content = ? WHERE id = ?");
-//     $stmt->execute([$title, $content, $id]);
-// }
-
 function getCustomers($pdo)
 {
     return $pdo->query("SELECT * FROM customers ORDER BY created_at DESC")->fetchAll();
@@ -46,9 +23,21 @@ function updateCustomer($pdo, $id, $email, $name)
     $stmt->execute([$email, $name, $id]);
 }
 
-function findCustomer($pdo, $query) {
-    $stmt = $pdo->prepare("SELECT * FROM customers WHERE name LIKE ? OR email LIKE ?");
-    $search_term = "%" . $query . "%";
+function globalSearch($pdo, $query) {
+    $results = [];
+    $search_term  = "%" . $query . "%";
+
+    $stmt = $pdo->prepare("SELECT * FROM customers WHERE name LIKE ? OR email LIKE?");
     $stmt->execute([$search_term, $search_term]);
-    return $stmt->fetchAll();
+    $results['customers'] = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT * FROM categories WHERE name LIKE ?");
+    $stmt->execute([$search_term]);
+    $results['categories'] = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT * FROM products WHERE sku LIKE ? OR title LIKE ? OR price LIKE ? OR stock LIKE ?");
+    $stmt->execute([$search_term, $search_term, $search_term, $search_term]);
+    $results['products'] = $stmt->fetchAll();
+
+    return $results;
 }

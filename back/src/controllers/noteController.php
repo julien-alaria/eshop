@@ -115,6 +115,6 @@ function removeCustomer($pdo, $id): void
 }
 
 function searchCustomer($pdo, $query) {
-    $customers = findCustomer($pdo, $query);
+    $customers = globalSearch($pdo, $query);
     respond_json($customers);
 }
