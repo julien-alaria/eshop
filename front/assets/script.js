@@ -100,39 +100,6 @@ async function deleteCustomer(id) {
   return res.json(); // {message: "deleted"}
 }
 
-// async function findCustomer(query) {
-//   const res = await fetch(ROUTES.research, {
-//     method: "GET",
-//     headers: { Accept: "application/json"},
-//   });
-    // console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}
-//   if (!res.ok) {
-//     let msg = "Recherche Impossible";
-//     try {
-//       const e = await res.json();
-//       if (e.message || e.error) mas = e.message || e/error;
-//     } catch {}
-//     throw new Error(msg);
-//   }
-//   return res.json(); // {message: "research"}
-// }
-
-// async function findCustomer(query) {
-  
-//   const res = await fetch(ROUTES.index, {
-//     headers: { Accept: "application/json" },
-//   });
-//   console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}`);
-//   if (!res.ok) throw new Error("Erreur GET");
-//   const data = await res.json();
-//   // Controller renvoie un tableau brut
-//   const rows = Array.isArray(data) ? data : data.data || [];
-//   // maj cache
-//   noteCache.clear();
-//   for (const n of rows) if (n && n.id != null) noteCache.set(String(n.id), n);
-//   return rows;
-// }
-
 // --------- UI rendering ----------
 
 function renderList(items) {
