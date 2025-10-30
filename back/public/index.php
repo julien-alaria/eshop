@@ -19,13 +19,14 @@ switch ($route) {
         break;
     case 'customer.delete':
         if (isset($_GET['id'])) {
-            deleteCustomer($pdo, $_GET['id']);
+            removeCustomer($pdo, $_GET['id']);
         }
         break;
     case 'customer.research':
-        if (isset($_GET['research'])) {
-            findCustomer($pdo, $_GET['research']);
+        if (isset($_GET['query'])) {
+            searchCustomer($pdo, $_GET['query'] ?? '');
         }
+        break;
     default:
         http_response_code(404);
         echo json_encode(["message" => "Not Found"]);

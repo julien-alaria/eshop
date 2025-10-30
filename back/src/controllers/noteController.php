@@ -113,3 +113,8 @@ function removeCustomer($pdo, $id): void
     deleteCustomer($pdo, $id);
     respond_json(['message' => 'deleted']);
 }
+
+function searchCustomer($pdo, $query) {
+    $customers = findCustomer($pdo, $query);
+    respond_json($customers);
+}

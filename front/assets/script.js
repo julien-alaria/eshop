@@ -8,7 +8,7 @@ const ROUTES = {
   edit: (id) => `${API_BASE}/?route=customer.edit&id=${encodeURIComponent(id)}`,
   delete: (id) =>
     `${API_BASE}/?route=customer.delete&id=${encodeURIComponent(id)}&delete=1`,
-  research: `${API_BASE}/?route=customer.research`,
+  research: (query) => `${API_BASE}/?route=customer.research&query=${encodeURIComponent(query)}`,
 };
 
 // Petit cache local pour retrouver vite une note par id
@@ -100,38 +100,39 @@ async function deleteCustomer(id) {
   return res.json(); // {message: "deleted"}
 }
 
-// async function findCustomer(query) {
-//   const res = await fetch(ROUTES.research, {
-//     method: "GET",
-//     headers: { Accept: "application/json"},
-//   });
-    // console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}
-//   if (!res.ok) {
-//     let msg = "Recherche Impossible";
-//     try {
-//       const e = await res.json();
-//       if (e.message || e.error) mas = e.message || e/error;
-//     } catch {}
-//     throw new Error(msg);
-//   }
-//   return res.json(); // {message: "research"}
-// }
+async function findCustomer(query) {
+  const res = await fetch(ROUTES.research(query), {
+    method: "GET",
+    headers: { Accept: "application/json"},
+  });
 
-// async function findCustomer(query) {
-  
-//   const res = await fetch(ROUTES.index, {
-//     headers: { Accept: "application/json" },
-//   });
-//   console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}`);
-//   if (!res.ok) throw new Error("Erreur GET");
-//   const data = await res.json();
-//   // Controller renvoie un tableau brut
-//   const rows = Array.isArray(data) ? data : data.data || [];
-//   // maj cache
-//   noteCache.clear();
-//   for (const n of rows) if (n && n.id != null) noteCache.set(String(n.id), n);
-//   return rows;
-// }
+  if (!res.ok) {
+    let msg = "Recherche Impossible";
+    try {
+      const e = await res.json();
+      if (e.message || e.error) msg = e.message || e.error;
+    } catch {}
+    throw new Error(msg);
+  }
+
+  const rawText = await res.text();
+  console.log("Réponse brute du serveur:", rawText);
+
+  if (rawText === "null" || rawText.trim() === "") {
+    return [];
+  }
+
+  let data;
+  try {
+      data = JSON.parse(rawText);
+  } catch (e) {
+      console.error("Erreur de parsing JSON:", e);
+      throw new Error("Réponse serveur illisible ou vide."); 
+  }
+
+  const rows = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : []);
+  return rows;
+}
 
 // --------- UI rendering ----------
 
@@ -348,28 +349,25 @@ async function init() {
     root.setAttribute("data-theme", current === "light" ? "dark" : "light");
   });
 
-  // Recherche SUR L'AFFICHAGE FRONT (PAS EN BDD)
-  const searchInput = document.getElementById("research");
-  const listItems = list.querySelectorAll(".list__item");
- 
-  searchInput.addEventListener("input", function (e) {
+  const searchBddInput = document.getElementById("research-bdd");
+  searchBddInput.addEventListener("input", async function (e) {
     const query = e.target.value.toLowerCase();
-    // console.log(query);
+    console.log(query);
 
-    listItems.forEach((listItem) => {
+    try {
+      if (query.length > 0) {
+        const foundCustomers = await findCustomer(query);
 
-    const itemText = listItem.textContent.toLowerCase();
-      // console.log(query);
-
-    if (itemText.includes(query)) {
-        // console.log(query);
-        listItem.style.display = "grid";
+        renderList(foundCustomers);
       } else {
-        listItem.style.display = "none";
-
+        renderList(await fetchCustomers());
       }
-    })
-  })
+
+    } catch (e) {
+      console.error(e);
+      toast("x " + (e.message || "Erreur de recherche"), true);
+    }
+  });
 
 }
 

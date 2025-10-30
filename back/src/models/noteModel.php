@@ -49,5 +49,6 @@ function updateCustomer($pdo, $id, $email, $name)
 function findCustomer($pdo, $query) {
     $stmt = $pdo->prepare("SELECT * FROM customers WHERE name LIKE ? OR email LIKE ?");
     $search_term = "%" . $query . "%";
-    $stmt->execute([$search_term]);
+    $stmt->execute([$search_term, $search_term]);
+    return $stmt->fetchAll();
 }
