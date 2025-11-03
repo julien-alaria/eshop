@@ -2,7 +2,7 @@
 
 function getCustomers($pdo)
 {
-    return $pdo->query("SELECT * FROM customers ORDER BY created_at DESC")->fetchAll();
+    return $pdo->query("SELECT * FROM customers ORDER BY created_at DESC")->fetchAll(PDO::FETCH_ASSOC);
 }
 
 function addCustomer($pdo, $email, $name)

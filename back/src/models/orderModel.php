@@ -47,3 +47,8 @@ function deleteOrder($pdo, $id){
     return $stmt->execute([$id]);
 }
 
+function sumTotalOrder($pdo, $id) {
+    $sql = "SELECT SUM(quantity * unit_price) AS total FROM order_item WHERE order_id = ?";
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute([$id]);
+}

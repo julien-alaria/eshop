@@ -44,3 +44,8 @@ function removeOrder($pdo, $id){
     $success = deleteOrder($pdo, $id);
     respond_json(['success' => $success]);
 }
+
+function totalOrder($pdo, $id) {
+    $success = sumTotalOrder($pdo, $id);
+    respond_json(['success' => $success]);
+}

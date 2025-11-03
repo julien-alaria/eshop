@@ -16,6 +16,7 @@
       </button>
     </header>
     <main class="container grid gap-6">
+      
       <!-- PARTIE BARRE DE RECHERCHE -->
       <section class="container grid gap-6">
         <h2 class="text-lg fw-600 mb-2">Recherche de Client ou Produit</h2>
@@ -102,6 +103,17 @@
           <button id="refreshProductBtn" class="btn btn-ghost">Rafraîchir</button>
         </div>
         <ul id="product-list" class="list mt-3"></ul>
+      </section>
+
+    <!-- PARTIE STATS -->
+     <section class="card grid gap-4" id="stats-kpis-display">
+      <h2 class="text-lg fw-600">Indicateur de Performances</h2>
+       <div class="kpi-grid">
+        <p>Revenu Total: <strong id="totalRevenueDisplay"></strong></p>
+        <p>Nombre de Commandes : <strong id="orderCountDisplay"></strong></p>
+        <p>Valeur Moyenne : <strong id="averageOrderValueDisplay"></strong></p>
+        <p>Produit le Plus Vendu : <strong id="topProductDisplay"></strong></p>
+       </div>
       </section>
     </main>
 
