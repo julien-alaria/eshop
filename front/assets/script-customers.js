@@ -1,19 +1,14 @@
-// URL du back (adaptez si besoin)
-const API_BASE = "http://localhost:8000";
+import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
 
-// Routes attendues par ton router PHP (?route=notes.*)
 const ROUTES = {
   index: `${API_BASE}/?route=customer.index`,
   create: `${API_BASE}/?route=customer.create`,
   edit: (id) => `${API_BASE}/?route=customer.edit&id=${encodeURIComponent(id)}`,
   delete: (id) =>
     `${API_BASE}/?route=customer.delete&id=${encodeURIComponent(id)}&delete=1`,
-  research: (query) =>
-    `${API_BASE}/?route=customer.research&query=${encodeURIComponent(query)}`,
 };
 
-// Petit cache local pour retrouver vite une note par id
-const noteCache = new Map();
+const customerCache = new Map();
 
 // --------- API calls ----------
 
@@ -22,13 +17,13 @@ async function fetchCustomers() {
     headers: { Accept: "application/json" },
   });
   console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}`);
-  if (!res.ok) throw new Error("Erreur GET");
+  if (!res.ok) throw new Error("Erreur GET Customers");
   const data = await res.json();
   // Controller renvoie un tableau brut
   const rows = Array.isArray(data) ? data : data.data || [];
   // maj cache
-  noteCache.clear();
-  for (const n of rows) if (n && n.id != null) noteCache.set(String(n.id), n);
+  customerCache.clear();
+  for (const n of rows) if (n && n.id != null) customerCache.set(String(n.id), n);
   return rows;
 }
 
@@ -49,7 +44,7 @@ async function createCustomer(payload) {
   });
 
   if (!res.ok) {
-    let msg = "Erreur POST";
+    let msg = "Erreur POST Customers";
     try {
       const e = await res.json();
       if (e.message || e.error) msg = e.message || e.error;
@@ -74,7 +69,7 @@ async function editCustomer(id, payload) {
     body,
   });
   if (!res.ok) {
-    let msg = "Erreur EDIT";
+    let msg = "Erreur EDIT Customer";
     try {
       const e = await res.json();
       if (e.message || e.error) msg = e.message || e.error;
@@ -91,7 +86,7 @@ async function deleteCustomer(id) {
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
-    let msg = "Erreur DELETE";
+    let msg = "Erreur DELETE Customers";
     try {
       const e = await res.json();
       if (e.message || e.error) msg = e.message || e.error;
@@ -101,49 +96,13 @@ async function deleteCustomer(id) {
   return res.json(); // {message: "deleted"}
 }
 
-async function globalSearch(query) {
-  const res = await fetch(ROUTES.research(query), {
-    method: "GET",
-    headers: { Accept: "application/json" },
-  });
-
-  if (!res.ok) {
-    let msg = "Recherche Impossible";
-    try {
-      const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
-    } catch {}
-    throw new Error(msg);
-  }
-
-  const rawText = await res.text();
-  console.log("Réponse brute du serveur:", rawText);
-
-  if (rawText === "null" || rawText.trim() === "") {
-    return { customers: [], categories: [], products: [] };
-  }
-
-  let data;
-  try {
-    data = JSON.parse(rawText);
-  } catch (e) {
-    console.error("Erreur de parsing JSON:", e);
-    throw new Error("Réponse serveur illisible ou vide.");
-  }
-  return typeof data === "object" && data !== null
-    ? data
-    : { customers: [], categories: [], products: [] };
-}
-
-// --------- UI rendering ----------
-
 function renderList(items) {
-  const ul = document.getElementById("list");
+  const ul = document.getElementById("customer-list");
   ul.innerHTML = "";
   if (!items.length) {
     const li = document.createElement("li");
     li.className = "list__empty";
-    li.textContent = "Aucune note.";
+    li.textContent = "Aucune client.";
     ul.appendChild(li);
     return;
   }
@@ -208,16 +167,16 @@ function enterEditMode(li, customer) {
   const emailInput = document.createElement("input");
   emailInput.className = "input";
   emailInput.value = customer.email || "";
-  emailInput.email = "email";
+  emailInput.name = "email";
   emailInput.required = true;
 
   const nameLabel = document.createElement("label");
   nameLabel.className = "label";
-  nameLabel.textContent = "name";
+  nameLabel.textContent = "Nom";
   const nameInput = document.createElement("input");
   nameInput.className = "input";
-  nameInput.rows = 4;
   nameInput.value = customer.name || "";
+  nameInput.name = "name";
   nameInput.required = true;
 
   const row = document.createElement("div");
@@ -249,132 +208,33 @@ function enterEditMode(li, customer) {
       // refresh list
       const items = await fetchCustomers();
       renderList(items);
-      toast("✅ Modifié");
+      toast("✅ Modifié", false, "customerFormMsg");
     } catch (err) {
-      toast("❌ " + (err?.message || "Erreur édition"), true);
+      toast("❌ " + (err?.message || "Erreur édition"), true, "customerFormMsg");
     }
   });
 
   // Cancel -> re-render item
   cancelBtn.addEventListener("click", () => {
-    const fresh = customerCache.get(String(note.id)) || note;
+    const fresh = customerCache.get(String(customer.id)) || customer;
     const freshLi = renderItem(fresh);
     li.replaceWith(freshLi);
   });
 }
 
-function renderGlobalResults(results) {
-  const ul = document.getElementById("list");
-  ul.innerHTML = "";
-
-  // Consolidation des tous les tableaux en un seul
-  const allItems = [
-    ...(results.customers || []).map((item) => ({ ...item, type: "customer" })),
-    ...(results.categories || []).map(item => ({...item, type: 'categorie'})),
-    ...(results.products || []).map(item => ({...item, type: 'product', name: item.title, content: `sku: ${item.sku} | price: ${item.price}`})),
-  ];
-
-  if (!allItems.length) {
-    const li = document.createElement("li");
-    li.className = "list__empty";
-    li.textContent = "Aucun résultat trouvé.";
-    ul.appendChild(li);
-    return;
-  }
-
-  for (const it of allItems) {
-    const li = renderGlobalItem(it);
-    ul.appendChild(li);
-  }
-}
-
-function renderGlobalItem(item) {
-  const li = document.createElement("li");
-  li.className = "list__item";
-  li.dataset.id = String(item.id);
-
-  // Titre: Nom de l'entité
-  const title = document.createElement("strong");
-  title.textContent = item.name || item.title || ("Sans nom");
-
-  // Contenu: Informations spécifiques ou description
-  const content = document.createElement("p");
-  content.textContent = item.content || item.email || "";
-
-  // Type: Indication de l'entité (client, catégorie, produit)
-  const typeBadge = document.createElement("span");
-  typeBadge.className = "badge " + item.type.toLowerCase().replace('é', 'e');
-  typeBadge.textContent = item.type;
-
-  const small = document.createElement("small");
-  small.className = "muted";
-  const dt = item.created_at ? new Date(item.created_at) : null;
-  small.textContent = (dt && !isNaN(dt) ? dt.toLocaleString() : "") + " | ";
-
-  // Les actions d'édition/suppression doivent être désactivées pour les catégories/produits
-  const actions = document.createElement("div");
-  actions.style.display = "flex";
-  actions.style.gap = ".5rem";
-  actions.style.marginTop = ".25rem";
-
-  // Afficher uniquement les actions du CRUD si c'est un client
-  if (item.type === 'customer') {
-    // Actions: Éditer / Supprimer
-    const edit = document.createElement("div");
-    actions.style.display = "flex";
-    actions.style.gap = ".5rem";
-    actions.style.marginTop = ".25rem";
-
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "btn btn-ghost";
-    editBtn.textContent = "Éditer";
-    editBtn.dataset.action = "edit";
-    editBtn.dataset.id = String(item.id);
-
-    const delBtn = document.createElement("button");
-    delBtn.type = "button";
-    delBtn.className = "btn btn-ghost";
-    delBtn.textContent = "Supprimer";
-    delBtn.dataset.action = "delete";
-    delBtn.dataset.id = String(item.id);
-
-    actions.append(editBtn, delBtn);
-  }
-
-  small.prepend(typeBadge);
-
-  li.append(title, content, small, actions);
-  return li;
-
-}
-
-
-// Mini toast (utilise #formMsg existant si présent)
-function toast(message, isError = false) {
-  const msg = document.getElementById("formMsg");
-  if (!msg) return alert(message);
-  msg.textContent = message;
-  msg.className = "text-sm " + (isError ? "error" : "success");
-  // efface après 2,5s
-  setTimeout(() => {
-    msg.textContent = "";
-    msg.className = "text-sm";
-  }, 2500);
-}
-
 // --------- Boot ----------
 
-async function init() {
+export async function initCustomers() {
   const form = document.getElementById("CustomerForm");
   const refreshBtn = document.getElementById("refreshBtn");
   const themeToggle = document.getElementById("themeToggle");
-  const listEl = document.getElementById("list");
+  const listEl = document.getElementById("customer-list");
 
   try {
     renderList(await fetchCustomers());
   } catch (e) {
     console.error(e);
+    toast("x Erreur au chargement des clients.", true, "customerFormMsg");
   }
 
   // Création
@@ -389,9 +249,9 @@ async function init() {
       await createCustomer(payload);
       form.reset();
       renderList(await fetchCustomers());
-      toast("✅ Ajouté");
+      toast("✅ Ajouté", false, "customerFormMsg");
     } catch (e) {
-      toast("❌ " + e.message, true);
+      toast("❌ " + e.message, true, "customerFormMsg");
     }
   });
 
@@ -399,8 +259,10 @@ async function init() {
   refreshBtn.addEventListener("click", async () => {
     try {
       renderList(await fetchCustomers());
+      toast ("Liste Clients rafraîchie", false, "customerFormMsg");
     } catch (e) {
       console.error(e);
+      toast("x Echec rafraîchissement", true, "customerFormMsg")
     }
   });
 
@@ -413,7 +275,7 @@ async function init() {
 
     if (btn.dataset.action === "edit") {
       const li = btn.closest("li");
-      const note = noteCache.get(String(id));
+      const note = customerCache.get(String(id));
       if (!li || !note) return;
       enterEditMode(li, note);
     }
@@ -423,9 +285,9 @@ async function init() {
       try {
         await deleteCustomer(id);
         renderList(await fetchCustomers());
-        toast("🗑️ Supprimé");
+        toast("🗑️ Supprimé", false, "customerFormMsg");
       } catch (err) {
-        toast("❌ " + (err?.message || "Erreur suppression"), true);
+        toast("❌ " + (err?.message || "Erreur suppression"), true, "customerFormMsg");
       }
     }
   });
@@ -457,4 +319,3 @@ async function init() {
   });
 }
 
-document.addEventListener("DOMContentLoaded", init);

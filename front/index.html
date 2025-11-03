@@ -15,38 +15,39 @@
         <span class="toggle__label">Dark</span>
       </button>
     </header>
-
     <main class="container grid gap-6">
+      <!-- PARTIE BARRE DE RECHERCHE -->
+      <section class="container grid gap-6">
+        <h2 class="text-lg fw-600 mb-2">Recherche de Client ou Produit</h2>
+        <form id="ResearchForm" method="post" class="form grid gap-3">
+          <div class="grid gap-2">
+            <label for="research-bdd" class="label">Recherche en BDD</label>
+            <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
+          </div>
+        </form>
+      </section>
+      
+      <!-- PARTIE RESULTAT DE RECHERCHE -->
+      <section id="global-search-results" class="container grid gap-6">
+          <h3>Résultats de la Recherche Globale</h3>
+          <ul id="list" class="list">
+              </ul>
+      </section>
+
+      <!-- PARTIE CUSTOMERS -->
       <section class="card">
-        <h2 class="text-lg fw-600 mb-2">Ajouter un Customer</h2>
+        <h2 class="text-lg fw-600 mb-2">Ajouter un Client</h2>
         <form id="CustomerForm" method="post" class="form grid gap-3">
           <div class="grid gap-2">
             <label for="email" class="label">Email</label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              class="input"
-              placeholder="Votre Email"
-              required
-            />
+            <input id="email" name="email" type="email" class="input" placeholder="Votre Email" required/>
           </div>
           <div class="grid gap-2">
             <label for="name" class="label">Nom</label>
             <input type="text" id="name" name="name" class="input" placeholder="Votre nom" required>
           </div>
           <button class="btn" type="submit">Ajouter</button>
-          <p id="formMsg" class="text-sm"></p>
-        </form>
-      </section>
-
-        <section class="card">
-        <h2 class="text-lg fw-600 mb-2">Recherche de Customer en BDD</h2>
-        <form id="ResearchForm" method="post" class="form grid gap-3">
-          <div class="grid gap-2">
-            <label for="research-bdd" class="label">Recherche en BDD</label>
-            <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
-          </div>
+          <p id="customerFormMsg" class="text-sm"></p>
         </form>
       </section>
 
@@ -55,7 +56,52 @@
           <h2 class="text-lg fw-600">Mes Customers</h2>
           <button id="refreshBtn" class="btn btn-ghost">Rafraîchir</button>
         </div>
-        <ul id="list" class="list mt-3"></ul>
+        <ul id="customer-list" class="list mt-3"></ul>
+      </section>
+
+      <!-- PARTIE PRODUCTS -->
+      <section class="card">
+        <h2 class="text-lg fw-600 mb-2">Ajouter un Produit</h2>
+        <form id="ProductForm" method="post" class="form grid gap-3">
+
+          <div class="grid gap-2">
+            <label for="sku" class="label">Sku</label>
+            <input id="sku" name="sku" type="sku" class="input" placeholder="Sku" required/>
+          </div>
+
+          <div class="grid gap-2">
+            <label for="title" class="label">Nom du Produit</label>
+            <input id="title" name="title" type="text" class="input" placeholder="Nom du Produit" required/>
+          </div>
+
+          <div class="grid gap-2">
+            <label for="product-category-select" class="label">Catégorie</label>
+            <select id="product-category-select" name="category" class="input" required>
+              <option value="">Chargement une catégorie...</option>
+            </select>
+          </div>
+
+          <div class="grid gap-2">
+            <label for="price" class="label">prix</label>
+            <input type="text" id="price" name="price" class="input" placeholder="prix" required>
+          </div>
+
+          <div class="grid gap-2">
+            <label for="stock" class="label">stock</label>
+            <input type="text" id="stock" name="stock" class="input" placeholder="stock" required>
+          </div>
+
+          <button class="btn" type="submit">Ajouter</button>
+          <p id="productFormMsg" class="text-sm"></p>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg fw-600">Mes Produits</h2>
+          <button id="refreshProductBtn" class="btn btn-ghost">Rafraîchir</button>
+        </div>
+        <ul id="product-list" class="list mt-3"></ul>
       </section>
     </main>
 
@@ -66,6 +112,6 @@
       </p>
     </footer>
 
-    <script src="assets/script.js" defer></script>
+    <script type="module" src="assets/main.js" defer></script>
   </body>
 </html>

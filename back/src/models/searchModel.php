@@ -1,29 +1,7 @@
 <?php
 
-function getCustomers($pdo)
-{
-    return $pdo->query("SELECT * FROM customers ORDER BY created_at DESC")->fetchAll();
-}
-
-function addCustomer($pdo, $email, $name)
-{
-    $stmt = $pdo->prepare("INSERT INTO customers (email, name) VALUES (?, ?)");
-    $stmt->execute([$email, $name]);
-}
-
-function deleteCustomer($pdo, $id)
-{
-    $stmt = $pdo->prepare("DELETE FROM customers WHERE id = ?");
-    $stmt->execute([$id]);
-}
-
-function updateCustomer($pdo, $id, $email, $name)
-{
-    $stmt = $pdo->prepare("UPDATE customers SET email = ?, name = ? WHERE id = ?");
-    $stmt->execute([$email, $name, $id]);
-}
-
-function globalSearch($pdo, $query) {
+function performGlobalSearch($pdo, $query) {
+    
     $results = [];
     $search_term  = "%" . $query . "%";
 
@@ -38,6 +16,10 @@ function globalSearch($pdo, $query) {
     $stmt = $pdo->prepare("SELECT * FROM products WHERE sku LIKE ? OR title LIKE ? OR price LIKE ? OR stock LIKE ?");
     $stmt->execute([$search_term, $search_term, $search_term, $search_term]);
     $results['products'] = $stmt->fetchAll();
+
+    $stmt = $pdo->prepare("SELECT * FROM orders WHERE customer_id LIKE ? OR status LIKE ? OR total LIKE ?");
+    $stmt->execute([$search_term, $search_term, $search_term]);
+    $results['orders'] = $stmt->fetchAll();
 
     return $results;
 }
