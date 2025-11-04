@@ -35,7 +35,6 @@ switch ($route) {
     break;
 
   // Orders
-
   case 'orders.list':
     listOrders($pdo);
     break;
@@ -66,7 +65,6 @@ switch ($route) {
     break;
 
 // Customers
-
   case 'customer.index':
   listCustomers($pdo);
   break;
@@ -95,13 +93,28 @@ switch ($route) {
       break;
 
 //  stats
-
   case 'stats.kpis':
     statsKpis($pdo);
     break;
 
   case 'stats.revenue':
     statsRevenue($pdo);
+    break;
+  
+  case 'stats.average':
+    getAverageOrderValue($pdo);
+    break;
+
+  case 'stats.daily':
+    getDailyRevenue($pdo);
+    break;
+
+  case 'stats.status':
+    statStatuses($pdo);
+    break;
+
+  case 'stats.topproduct':
+    statsTopProduct($pdo);
     break;
 
 // Categories
@@ -110,7 +123,6 @@ case 'category.index':
   break;
 
 //  CSV export data
-
   case 'orders.export':
     exportOrdersCsv($pdo);
     break;

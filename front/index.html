@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Notes — Front</title>
+    <title>Admin Panel</title>
     <link rel="stylesheet" href="assets/style.css" />
   </head>
   <body data-theme="light">
@@ -106,14 +106,36 @@
       </section>
 
     <!-- PARTIE STATS -->
-     <section class="card grid gap-4" id="stats-kpis-display">
-      <h2 class="text-lg fw-600">Indicateur de Performances</h2>
-       <div class="kpi-grid">
+      <section class="card" id="stats-kpis-display">
+        <div class="flex items-center justify-between">
+          <h2 class="text-lg fw-600">Indicateur de Performances</h2>
+          <button id="refreshStatBtn" class="btn btn-ghost">Rafraîchir</button>
+        </div>
+        <ul id="customer-list" class="list mt-3"></ul>
+          <div class="kpi-grid">
         <p>Revenu Total: <strong id="totalRevenueDisplay"></strong></p>
         <p>Nombre de Commandes : <strong id="orderCountDisplay"></strong></p>
         <p>Valeur Moyenne : <strong id="averageOrderValueDisplay"></strong></p>
         <p>Produit le Plus Vendu : <strong id="topProductDisplay"></strong></p>
        </div>
+      </section>
+
+      <section>
+        <h2>Graphique de Chiffre d'Affaires</h2>
+
+        <canvas id="chartRevenue" style="max-height: 400px;"></canvas>
+      </section>
+
+      <section>
+        <h2>Statut des Commandes</h2>
+
+        <canvas id="chartStatus"></canvas>
+      </section>
+
+      <section>
+        <h2>Top Produits Vendus</h2>
+
+        <canvas id="chartTop" style="max-height: 400px;"></canvas>
       </section>
     </main>
 
@@ -125,5 +147,6 @@
     </footer>
 
     <script type="module" src="assets/main.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   </body>
 </html>

@@ -28,7 +28,6 @@ async function fetchCustomers() {
 }
 
 async function createCustomer(payload) {
-  // Le controller lit $_POST['title'] et $_POST['content'] -> form-urlencoded
   const body = new URLSearchParams({
     email: (payload.email ?? "").toString().trim(),
     name: (payload.name ?? "").toString().trim(),
@@ -80,7 +79,6 @@ async function editCustomer(id, payload) {
 }
 
 async function deleteCustomer(id) {
-  // Le controller supprime si $_GET['delete'] est présent -> GET suffit
   const res = await fetch(ROUTES.delete(id), {
     method: "GET",
     headers: { Accept: "application/json" },
