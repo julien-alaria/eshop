@@ -66,31 +66,31 @@ switch ($route) {
 
 // Customers
   case 'customer.index':
-  listCustomers($pdo);
-  break;
+      listCustomers($pdo);
+    break;
 
   case 'customer.create':
       createCustomer($pdo, $_POST['email'] ?? '', $_POST['name'] ?? '');
-      break;
+    break;
 
   case 'customer.edit':
       if (isset($_GET['id'])) {
           editCustomer($pdo, $_GET['id'], $_POST['email'] ?? '', $_POST['name'] ?? '');
       }
-      break;
+    break;
 
   case 'customer.delete':
       if (isset($_GET['id'])) {
           removeCustomer($pdo, $_GET['id']);
       }
-      break;
+    break;
 
 // Global Search
   case 'global.search':
       if (isset($_GET['query'])) {
           globalSearch($pdo, $_GET['query'] ?? '');
       }
-      break;
+    break;
 
 //  stats
   case 'stats.kpis':
@@ -100,7 +100,8 @@ switch ($route) {
   case 'stats.revenue':
     statsRevenue($pdo);
     break;
-  
+
+  // A VERIFIER SI FONCTION DU MODELE
   case 'stats.average':
     getAverageOrderValue($pdo);
     break;
@@ -118,15 +119,46 @@ switch ($route) {
     break;
 
 // Categories
-case 'category.index':
-  listCategories($pdo);
-  break;
+  case 'category.index':
+    listCategories($pdo);
+    break;
 
+  // case 'category.insert':
+  //     insertCategorie($pdo, $_POST['name'] ?? '');
+  //   break;
+
+  // case 'category.update':
+  //     if (isset($_GET['id'])  ?? '') {
+  //       editCategorie($pdo, $id, $name);
+  //     }
+  //   break;
+
+  // case 'categorie.delete':
+  //     if (isset($_GET['id'])  ?? '') {
+  //       deleteCategorie($pdo, $id);
+  //     }
+  //   break;
+
+  case 'category.insert':
+    $name = $_POST['name'] ?? null;
+    createCategorie($pdo, $name); 
+    break;
+
+  case 'category.update':
+    $id = $_GET['id'] ?? null;
+    $name = $_POST['name'] ?? null;
+    editCategorie($pdo, $id, $name); 
+    break;
+
+  case 'categorie.delete':
+    $id = $_GET['id'] ?? null;
+    deleteCategorie($pdo, $id);
+    break;
+  
 //  CSV export data
   case 'orders.export':
     exportOrdersCsv($pdo);
     break;
-
 
   default;
     http_response_code(404);
@@ -134,12 +166,3 @@ case 'category.index':
     break; 
 }
 
-
-
-
-
-
-
-
-
- 

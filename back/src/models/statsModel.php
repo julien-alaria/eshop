@@ -19,7 +19,7 @@ function getOrderStatuses($pdo){
 function getTopProduct($pdo){
     return $pdo->query(
         "SELECT p.title, SUM(oi.quantity) as total_sold FROM order_items oi JOIN products p ON oi.product_id = p.id
-        GROUP BY oi.product_id ORDER BY total_sold DESC LIMIT 1"
+        GROUP BY oi.product_id ORDER BY total_sold DESC LIMIT 3"
     )->fetchAll(PDO::FETCH_ASSOC);
 }
 
@@ -29,7 +29,23 @@ function getDailyRevenue($pdo) {
         FROM orders
         WHERE status='paid'
         GROUP BY day
-        ORDER BY day DESC
+        ORDER BY day ASC
         LIMIT 30
     ")->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getCustomerCount($pdo) {
+    return $pdo->query("SELECT COUNT(DISTINCT customer_id) FROM orders")->fetchColumn();
+}
+
+function getProductCount($pdo) {
+    return $pdo->query("SELECT COUNT(id) FROM products")->fetchColumn();
+}
+
+function getLowStockCount($pdo, $threshold = 2) {
+    return $pdo->query("SELECT COUNT(id) FROM products WHERE stock < $threshold")->fetchColumn();
+}
+
+function getAllCustomerCount($pdo) {
+    return $pdo->query("SELECT COUNT(*) FROM customers")->fetchColumn();
 }

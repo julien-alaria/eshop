@@ -308,7 +308,7 @@ export async function initCustomers() {
 
         renderGlobalResults(globalResults);
       } else {
-        renderList(await fetchCustomers());
+        renderGlobalResults({ customers: [], categories: [], products: [], orders: [] });
       }
     } catch (e) {
       console.error(e);

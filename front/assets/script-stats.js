@@ -103,17 +103,17 @@ export async function initStats() {
   }
 
   // Rafraîchir
-  const refreshstatBtn = document.querySelector("#refreshStatBtn");
-  refreshstatBtn.addEventListener("click", async () => {
-    try {
-      await renderKpis(await fetchStats());
-      await renderRevenue();
-      await renderTop();
-      await renderStatus();
-      toast("Liste Statistiques rafraîchie", false);
-    } catch (e) {
-      console.error(e);
-      toast("❌ Échec rafraîchissement Liste Statistiques");
-    }
-  });
+  // const refreshstatBtn = document.querySelector("#refreshStatBtn");
+  // refreshstatBtn.addEventListener("click", async () => {
+  //   try {
+  //     await renderKpis(await fetchStats());
+  //     await renderRevenue();
+  //     await renderTop();
+  //     await renderStatus();
+  //     toast("Liste Statistiques rafraîchie", false);
+  //   } catch (e) {
+  //     console.error(e);
+  //     toast("❌ Échec rafraîchissement Liste Statistiques");
+  //   }
+  // });
 }

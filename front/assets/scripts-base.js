@@ -28,7 +28,9 @@ export async function globalSearch(query) {
     try {
       const e = await res.json();
       if (e.message || e.error) msg = e.message || e.error;
-    } catch {}
+    } catch {err} {
+      msg = `Erreur HTTP ${res.status}: ${res.statusText}`;
+    }
     throw new Error(msg);
   }
 
@@ -116,6 +118,8 @@ function renderGlobalItem(item) {
 
     const orderStatus = document.createElement("span");
     totalOrder.textContent = item.status;
+
+    actions.append(orderContent, totalOrder, orderStatus);
   }
 
   // Afficher uniquement les actions du CRUD si c'est un client

@@ -20,7 +20,7 @@ function getOrderById($pdo, $id){
 }
 
 function addOrder($pdo, $customer_id, $status, $total, $items){
-    $sql = "INSERT INTO orders(customer_id, status, total, created_at) VALUES (?, ?, ? datetime('now'))";
+    $sql = "INSERT INTO orders(customer_id, status, total) VALUES (?, ?, ?)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$customer_id, $status, $total]);
     $order_id = $pdo->lastInsertId();
@@ -48,7 +48,7 @@ function deleteOrder($pdo, $id){
 }
 
 function sumTotalOrder($pdo, $id) {
-    $sql = "SELECT SUM(quantity * unit_price) AS total FROM order_item WHERE order_id = ?";
+    $sql = "SELECT SUM(quantity * unit_price) AS total FROM order_items WHERE order_id = ?";
     $stmt = $pdo->prepare($sql);
     return $stmt->execute([$id]);
 }

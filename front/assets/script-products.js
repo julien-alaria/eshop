@@ -1,4 +1,4 @@
-import { API_BASE, toast } from "./scripts-base.js";
+import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
 
 const PRODUCTS = {
   indexProduct: `${API_BASE}/?route=product.index`,
@@ -35,6 +35,7 @@ async function createProducts(payload) {
         title: (payload.title ?? "").toString().trim(),
         price: (payload.price ?? "").toString().trim(),
         stock: (payload.stock ?? "").toString().trim(),
+        category_id: (payload.category_id ?? "").toString().trim(),
     });
 
     const res = await fetch(PRODUCTS.createProduct, {
@@ -63,7 +64,7 @@ async function editProduct(id, payload) {
     title: (payload.title ?? "").toString().trim(),
     price: (payload.price ?? "").toString().trim(),
     stock: (payload.stock ?? "").toString().trim(),
-    // categorie_id: (categorie_id.stock ?? "").toString().trim(),
+    categorie_id: (payload.category_id ?? "").toString().trim(),
   });
 
   const res = await fetch(PRODUCTS.editProduct(id), {
@@ -309,6 +310,7 @@ export async function initProducts() {
       title: (fd.get("title") || "").toString().trim(),
       price: (fd.get("price") || "").toString().trim(),
       stock: (fd.get("stock") || "").toString().trim(),
+      category_id: (fd.get("category_id") || "").toString().trim(),
     };
     try {
       await createProducts(payload);
@@ -356,6 +358,32 @@ export async function initProducts() {
       } catch (err) {
         toast("❌ " + (err?.message || "Erreur suppression"), true, "productFormMsg");
       }
+    }
+  })
+
+  // Toggle light/dark + animation
+  themeToggle.addEventListener("click", () => {
+    const root = document.body;
+    const current = root.getAttribute("data-theme") || "light";
+    root.setAttribute("data-theme", current === "light" ? "dark" : "light");
+  });
+
+  const searchBddInput = document.getElementById("research-bdd");
+  searchBddInput.addEventListener("input", async function (e) {
+    const query = e.target.value.toLowerCase();
+    console.log(query);
+
+    try {
+      if (query.length > 0) {
+        const globalResults = await globalSearch(query);
+
+        renderGlobalResults(globalResults);
+      } else {
+        renderGlobalResults({ customers: [], categories: [], products: [], orders: [] });
+      }
+    } catch (e) {
+      console.error(e);
+      toast("x " + (e.message || "Erreur de recherche"), true);
     }
   });
 }

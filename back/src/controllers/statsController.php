@@ -13,6 +13,10 @@ function statsKpis($pdo){
     respond_json([
         "totalRevenue" => (float) getTotalRevenue($pdo),
         "orderCount" => (int) getOrderCount($pdo),
+        "customerCount" => getCustomerCount($pdo),
+        "totalCustomerCount" => getAllCustomerCount($pdo),
+        "productCount" => getProductCount($pdo),
+        "lowStockCount" => getLowStockCount($pdo),
         "averageOrderValue" => (float) getAverageOrderValue($pdo),
         "statuses" => getOrderStatuses($pdo),
         "topProduct" => getTopProduct($pdo),
