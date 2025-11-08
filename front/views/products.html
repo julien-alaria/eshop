@@ -1,99 +1,105 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Panel Products</title>
-  <link rel="stylesheet" href="../assets/style.css">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Produits — Front</title>
+  <link rel="stylesheet" href="../css/style.css" />
 </head>
-<body data-theme="light">
+<body data-page="products">
+  <div class="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div class="mx-auto max-w-7xl space-y-6">
 
-    <header class="container py-4 flex items-center justify-between">
-        <nav class="dashboard-nav">
-            <a href="./overview.html" class="active"><span>🏠</span>Overview</a>
-            <a href="#"><span>🛒</span>Orders</a>
-            <a href="./products.html"><span>📦</span>Products</a>
-            <a href="./customers.html"><span>👤</span>Customers</a>
-            <a href="./category.html"><span>📂</span>Categories</a>
-        </nav>
-        
-        <h1 class="text-2xl fw-700">Panel Customers</h1>
-        <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
+      <nav class="dashboard-nav">
+        <a href="./stats.html"><span>🏠</span>Overview</a>
+        <a href="./orders.html"><span>🛒</span>Orders</a>
+        <a href="./products.html" class="active"><span>📦</span>Products</a>
+        <a href="./customers.html"><span>👤</span>Customers</a>
+        <a href="./category.html"><span>📂</span>Categories</a>
+      </nav>
+
+      <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
         <span class="toggle__label">Light</span>
         <span class="toggle__track"><span class="toggle__thumb"></span></span>
         <span class="toggle__label">Dark</span>
-        </button>
-    </header>
-    
-    <main class="container grid gap-6">
-      
-      <!-- PARTIE BARRE DE RECHERCHE -->
-      <section class="container grid gap-6">
-        <h2 class="text-lg fw-600 mb-2">Recherche de Client ou Produit</h2>
-        <form id="ResearchForm" method="post" class="form grid gap-3">
-          <div class="grid gap-2">
-            <label for="research-bdd" class="label">Recherche en BDD</label>
-            <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
-          </div>
-        </form>
-      </section>
-      
-      <!-- PARTIE RESULTAT DE RECHERCHE -->
-      <section id="global-search-results" class="container grid gap-6">
+      </button>
+
+      <main class="container grid gap-6">
+
+        <!-- PARTIE BARRE DE RECHERCHE -->
+        <section class="container grid gap-6">
+          <h2 class="text-lg fw-600 mb-2">Recherche de Client ou Produit</h2>
+          <form id="ResearchForm" method="post" class="form grid gap-3">
+            <div class="grid gap-2">
+              <label for="research-bdd" class="label">Recherche en BDD</label>
+              <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
+            </div>
+          </form>
+        </section>
+
+        <!-- PARTIE RESULTAT DE RECHERCHE -->
+        <section id="global-search-results" class="container grid gap-6">
           <h3>Résultats de la Recherche Globale</h3>
-          <ul id="list" class="list">
-              </ul>
-      </section>
+          <ul id="list" class="list"></ul>
+        </section>
 
-    <!-- PARTIE PRODUCTS -->
-    <section class="card">
-        <h2 class="text-lg fw-600 mb-2">Ajouter un Produit</h2>
-        <form id="ProductForm" method="post" class="form grid gap-3">
+        <!-- PARTIE PRODUCTS -->
+        <section class="card">
+          <h2 class="text-lg fw-600 mb-2">Ajouter un Produit</h2>
+          <form id="ProductForm" method="post" class="form grid gap-3">
 
             <div class="grid gap-2">
-                <label for="sku" class="label">Sku</label>
-                <input id="sku" name="sku" type="sku" class="input" placeholder="Sku" required/>
+              <label for="sku" class="label">Sku</label>
+              <input id="sku" name="sku" type="text" class="input" placeholder="Sku" required/>
             </div>
 
             <div class="grid gap-2">
-                <label for="title" class="label">Nom du Produit</label>
-                <input id="title" name="title" type="text" class="input" placeholder="Nom du Produit" required/>
+              <label for="title" class="label">Nom du Produit</label>
+              <input id="title" name="title" type="text" class="input" placeholder="Nom du Produit" required/>
             </div>
 
             <div class="grid gap-2">
-                <label for="product-category-select" class="label">Catégorie</label>
-                <select id="product-category-select" name="category" class="input" required>
-                    <option value="">Chargement une catégorie...</option>
-                </select>
+              <label for="product-category-select" class="label">Catégorie</label>
+              <select id="product-category-select" name="category_id" class="input" required>
+                <option value="">Chargement des catégories...</option>
+              </select>
             </div>
 
             <div class="grid gap-2">
-                <label for="price" class="label">prix</label>
-                <input type="text" id="price" name="price" class="input" placeholder="prix" required>
+              <label for="price" class="label">Prix</label>
+              <input type="number" id="price" name="price" class="input" placeholder="Prix" required>
             </div>
 
             <div class="grid gap-2">
-                <label for="stock" class="label">stock</label>
-                <input type="text" id="stock" name="stock" class="input" placeholder="stock" required>
+              <label for="stock" class="label">Stock</label>
+              <input type="number" id="stock" name="stock" class="input" placeholder="Stock" required>
             </div>
 
             <button class="btn" type="submit">Ajouter</button>
             <p id="productFormMsg" class="text-sm"></p>
-        </form>
-    </section>
+          </form>
+        </section>
 
-    <section class="card">
-        <div class="flex items-center justify-between">
+        <section class="card">
+          <div class="flex items-center justify-between">
             <h2 class="text-lg fw-600">Mes Produits</h2>
             <button id="refreshProductBtn" class="btn btn-ghost">Rafraîchir</button>
-        </div>
-        <ul id="product-list" class="list mt-3"></ul>
-    </section>
+          </div>
+          <ul id="product-list" class="list mt-3"></ul>
+        </section>
 
-    <script type="module">
-    import { initProducts } from '../assets/script-products.js'; 
-    document.addEventListener("DOMContentLoaded", initProducts); 
-  </script>
+      </main>
+
+      <footer class="container py-6 text-sm opacity-70">
+        <p>
+          Back: <code>php -S localhost:8000 -t public</code> (dans le dossier
+          <code>back</code>).
+        </p>
+      </footer>
+
+    </div>
+  </div>
+
+  <script type="module" src="../assets/script-products.js" defer></script>
 </body>
 </html>

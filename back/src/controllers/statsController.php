@@ -8,61 +8,32 @@ require_once __DIR__ . '/../helpers/helpers.php';
 
 /** ---------- Actions ---------- */
 
-function statsKpis($pdo){
-  
+function statsKpis(PDO $pdo): void {
     respond_json([
-        "totalRevenue" => (float) getTotalRevenue($pdo),
-        "orderCount" => (int) getOrderCount($pdo),
-        "customerCount" => getCustomerCount($pdo),
-        "totalCustomerCount" => getAllCustomerCount($pdo),
-        "productCount" => getProductCount($pdo),
-        "lowStockCount" => getLowStockCount($pdo),
-        "averageOrderValue" => (float) getAverageOrderValue($pdo),
+        "totalRevenue" => getTotalRevenue($pdo),
+        "orderCount" => getOrderCount($pdo),
+        "averageOrderValue" => getAverageOrderValue($pdo),
         "statuses" => getOrderStatuses($pdo),
-        "topProduct" => getTopProduct($pdo),
+        "topProducts" => getTopProducts($pdo, 1), // Ici on récupère juste le top 1
     ]);
 }
 
-function statsRevenue($pdo) {
-    $dailyData = getDailyrevenue($pdo);
+function statsRevenue(PDO $pdo): void {
+    $rows = getDailyRevenue($pdo);
 
-    $labels = [];
-    $values = [];
+    // Transformer le résultat pour le front (labels + values)
+    $labels = array_map(fn($row) => $row['day'], $rows);
+    $values = array_map(fn($row) => (float) $row['revenue'], $rows);
 
-    foreach ($dailyData as $row) {
-        $labels[] = $row['day'];
-        $values[] = $row['revenue'];
-    }
     respond_json([
         "labels" => $labels,
-        "values" => $values
+        "values" => $values,
     ]);
 }
 
-function statsTopProduct($pdo) {
-    $topProductData = getTopProduct($pdo);
-
-    $formattedData = [];
-
-    foreach ($topProductData as $row) {
-        $formattedData[] = [
-            'title' => $row['title'],
-            'qty' => $row['total_sold']
-        ];
-    }
-    respond_json(["top_products" => $formattedData]);
-}
-
-function statStatuses($pdo) {
-    $statusArray = getOrderStatuses($pdo);
-
-    $statusObject= [];
-
-    foreach ($statusArray as $row) {
-        $statusObject[$row['status']] = $row['count'];
-    }
-
+function statsTopProducts(PDO $pdo, int $limit = 10): void {
+    $products = getTopProducts($pdo, $limit);
     respond_json([
-        "orders_by_status" => $statusObject
+        "top_products" => $products
     ]);
 }

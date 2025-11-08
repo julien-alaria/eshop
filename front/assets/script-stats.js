@@ -1,119 +1,119 @@
-import { API_BASE, toast } from "./scripts-base.js";
+import { API_BASE, toast } from "./scripts-base.js"; 
 
-const STATS_ROUTE = { 
-  index_stats: `${API_BASE}/?route=stats.kpis` ,
-  revenue_chart: `${API_BASE}/?route=stats.revenue`,
-  average_order: `${API_BASE}/?route=stats.average`,
-  average_daily: `${API_BASE}/?route=stats.daily`,
-  top_product:`${API_BASE}/?route=stats.topproduct`,
-  order_status: `${API_BASE}/?route=stats.status`,
+const OVERVIEW_ROUTES = { 
+  kpis: `${API_BASE}/?route=stats.kpis`, 
+  daily_revenue: `${API_BASE}/?route=stats.revenue`, 
+  order_status: `${API_BASE}/?route=stats.kpis`,
+  top_products: `${API_BASE}/?route=stats.kpis`,
 };
 
-const statsCache = new Map();
+async function renderKpis() {
+  const res = await fetch(OVERVIEW_ROUTES.kpis);
+  if (!res.ok) throw new Error("Échec du chargement des KPIs.");
+  const data = await res.json();
+  
+  document.getElementById('revenue').textContent = '$' + Number(data.totalRevenue).toFixed(2);
+  document.getElementById('revenueLabel').textContent = 'From paid orders';
+  document.getElementById('orders').textContent = data.orderCount;
 
-//----------------------Actions---------------------------
+  // Customers / Products - ajout par défaut si non dispo
+  document.getElementById('customers').textContent = data.totalCustomerCount ?? 'N/A';
+  document.getElementById('products').textContent = data.productCount ?? 'N/A';
+  document.getElementById('productsLabel').textContent = (data.lowStockCount ?? 0) + ' low stock items';
+}
 
-async function fetchStats() {
-  const res = await fetch(STATS_ROUTE.index_stats, {
-    headers: { Accept: "application/json" },
+async function renderDailyRevenueChart() {
+  const res = await fetch(OVERVIEW_ROUTES.daily_revenue);
+  if (!res.ok) throw new Error("Échec du chargement du graphique de revenus.");
+  
+  const { labels, values } = await res.json(); // directement destructuré
+
+  new Chart(document.getElementById('dailyRevenueChart').getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Revenue ($)',
+        data: values.map(v => parseFloat(v) || 0), // assure que ce sont bien des nombres
+        borderColor: '#1d3557',
+        backgroundColor: 'rgba(34,197,94,0.10)',
+        fill: false,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: '#1d3557'
+      }]
+    },
+    options: { plugins: { legend: { display: false } } }
   });
-  console.log(`Statut de la requête : ${res.status}, ok : ${res}`);
-  if (!res.ok) throw new Error("Erreur GET");
+}
+
+async function renderOrderStatusChart() {
+  const res = await fetch(OVERVIEW_ROUTES.order_status);
+  if (!res.ok) throw new Error("Échec du chargement du statut des commandes.");
   const data = await res.json();
 
-  statsCache.clear();
-  statsCache.set("kpis", data);
+  const labels = data.statuses.map(s => s.status);
+  const values = data.statuses.map(s => s.count);
 
-  return data;
-}
-
-// --------- UI rendering ----------
-
-async function renderKpis(kpis) {
-  if (!kpis || typeof kpis.totalRevenue === "undefined") {
-    const statsDisplay = document.getElementById("stats-kpis-display");
-    statsDisplay.innerHTML = "<h3>Aucune Donnée Disponible</h3>";
-    return;
-  }
-
-  const revenueEl = document.getElementById("totalRevenueDisplay");
-  revenueEl.textContent = kpis.totalRevenue.toFixed(2) + "€";
-  //to fixed pour arrondir au centimes
-
-  const orderEl = document.getElementById("orderCountDisplay");
-  orderEl.textContent = kpis.orderCount;
-
-  const averageEl = document.getElementById("averageOrderValueDisplay");
-  averageEl.textContent = kpis.averageOrderValue.toFixed(2) + " €";
-
-  const topProductEl = document.getElementById("topProductDisplay");
-  if (kpis.topProduct && kpis.topProduct.length > 0) {
-    const topItem = kpis.topProduct[0];
-    topProductEl.textContent = `${topItem.title} (${topItem.total_sold} vendus)`;
-  } else {
-    topProductEl.textContent = "N/A";
-  }
-}
-
-async function renderRevenue() {
-  const res = await fetch(STATS_ROUTE.revenue_chart);
-  const { labels, values } = await res.json();
-  new Chart(document.getElementById('chartRevenue'), {
-    type: 'line',
-    data: { labels, datasets: [{ label: 'CA (€/jour', data: values }]
-  }});
-}
-
-async function renderStatus() {
-  const res = await fetch(STATS_ROUTE.order_status);
-  const { orders_by_status } = await res.json();
-  const labels = Object.keys(orders_by_status);
-  const values = Object.values(orders_by_status);
-  new Chart(document.getElementById('chartStatus'), {
-    type: 'doughnut',
-    data: { labels, datasets: [{ label: 'Commandes', data: values}]}
+  new Chart(document.getElementById('orderStatusChart').getContext('2d'), {
+    type: 'pie',
+    data: {
+      labels: labels,
+      datasets: [{
+        data: values,
+        backgroundColor: ["#ef476f", "#06d6a0", "#ffd166", "#118ab2"]
+      }]
+    },
+    options: { plugins: { legend: { display: true } } }
   });
 }
 
-async function renderTop() {
-  const res = await fetch(STATS_ROUTE.top_product);
-  const { top_products } = await res.json();
+async function renderTopProductsChart() {
+  const res = await fetch(OVERVIEW_ROUTES.top_products);
+  if (!res.ok) throw new Error("Échec du chargement des meilleurs produits.");
+  const data = await res.json();
+
+  const top_products = data.topProduct ?? [];
   const labels = top_products.map(x => x.title);
-  const values = top_products.map(x => x.qty);
-  new Chart(document.getElementById('chartTop'), {
+  const values = top_products.map(x => x.total_sold);
+
+  new Chart(document.getElementById('topProductsChart').getContext('2d'), {
     type: 'bar',
-    data: { labels, datasets: [{ label: 'Quantités', data: values}]}
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Units Sold',
+        data: values,
+        backgroundColor: '#1d3557'
+      }]
+    },
+    options: { plugins: { legend: { display: false } } }
   });
 }
 
-// --------- Boot ----------
+// --------- BOOT ----------
 
 export async function initStats() {
-  const refreshBtn = document.getElementById("refreshProductBtn");
-  const listEl = document.getElementById("stats-list");
-
   try {
-    await renderKpis(await fetchStats());
-    await renderRevenue();
-    await renderTop();
-    await renderStatus();
+    await Promise.all([
+      renderKpis(),
+      renderDailyRevenueChart(),
+      renderOrderStatusChart(),
+      renderTopProductsChart()
+    ]);
   } catch (e) {
-    console.error(e);
-    toast("❌ Erreur au chargement Liste Statistiques", true);
+    console.error("Erreur lors du chargement de l'aperçu:", e);
+    toast("❌ Erreur au chargement de l'Aperçu", true);
   }
 
-  // Rafraîchir
-  // const refreshstatBtn = document.querySelector("#refreshStatBtn");
-  // refreshstatBtn.addEventListener("click", async () => {
-  //   try {
-  //     await renderKpis(await fetchStats());
-  //     await renderRevenue();
-  //     await renderTop();
-  //     await renderStatus();
-  //     toast("Liste Statistiques rafraîchie", false);
-  //   } catch (e) {
-  //     console.error(e);
-  //     toast("❌ Échec rafraîchissement Liste Statistiques");
-  //   }
-  // });
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const root = document.body;
+      const current = root.getAttribute("data-theme") || "light";
+      root.setAttribute("data-theme", current === "light" ? "dark" : "light");
+    });
+  }
 }
+
+document.addEventListener("DOMContentLoaded", initStats);

@@ -8,10 +8,13 @@ require_once __DIR__ . '/../helpers/helpers.php';
 
 /** ---------- Actions ---------- */
 
-function listProducts($pdo): void
-{
-    $products = getProducts($pdo);
-    respond_json($products);
+function listProducts($pdo): void {
+    try {
+        $products = getProducts($pdo);
+        respond_json($products);
+    } catch (Throwable $e) {
+        respond_error($e->getMessage(), 500);
+    }
 }
 
 function createProduct($pdo): void
@@ -59,7 +62,7 @@ function editProduct($pdo, $id): void
     $title = s((string)($input['title'] ?? ''));
     $price = s((string)($input['price'] ?? ''));
     $stock = s((string)($input['stock'] ?? ''));
-    $category_id = $input['category_id'] ??  null;
+    $category_id = $input['category'] ??  null;
 
     if ($sku === '' || $title === '' || $price === '' || $stock === '') {
         respond_error('sku, title, price et stock sont requis', 422);

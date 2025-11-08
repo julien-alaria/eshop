@@ -1,9 +1,0 @@
--- Up migration
-CREATE TABLE products(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    sku TEXT UNIQUE NOT NULL,
-    title TEXT NOT NULL,
-    price REAL TEXT NOT NULL,
-    stock INTEGER NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);

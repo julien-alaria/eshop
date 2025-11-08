@@ -1,5 +1,0 @@
--- Up migration
-CREATE TABLE categories(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL
-);

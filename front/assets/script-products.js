@@ -4,7 +4,7 @@ const PRODUCTS = {
   indexProduct: `${API_BASE}/?route=product.index`,
   createProduct: `${API_BASE}/?route=product.create`,
   editProduct: (id) => `${API_BASE}/?route=product.edit&id=${encodeURIComponent(id)}`,
-  deleteProduct: (id) => `${API_BASE}/?route=product.delete&id=${encodeURIComponent(id)}&delete=1}`,
+  deleteProduct: (id) => `${API_BASE}/?route=product.delete&id=${encodeURIComponent(id)}&delete=1`,
 };
 
 const CATEGORIES_ROUTE = `${API_BASE}/?route=category.index`;
@@ -12,61 +12,83 @@ const CATEGORIES_ROUTE = `${API_BASE}/?route=category.index`;
 const productCache = new Map();
 const categoryCache = new Map();
 
-// --------- API calls ----------
+// ---------- API ----------
 
 async function fetchProducts() {
-  const res = await fetch(PRODUCTS.indexProduct, {
-    header: { Accept: "application/json"},
-  });
-  console.log(`Statut de la requête : ${res.status}, ok : ${res}`);
-  if (!res.ok) throw new Error("Erreur GET");
-  const data = await res.json();
+  try {
+    const res = await fetch(PRODUCTS.indexProduct, { headers: { Accept: "application/json" } });
+    const text = await res.text();
+    console.log("Réponse brute du serveur :", text);
 
-  const rows = Array.isArray(data) ? data : data.data || [];
-  productCache.clear();
-  for (const n of rows) if (n && n.id != null) productCache.set(String(n.id), n);
-  return rows;
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      toast("❌ Erreur chargement Produits/Catégories", true);
+      return [];
+    }
+
+    // Mettre à jour le cache
+    productCache.clear();
+    const rows = Array.isArray(data) ? data : data.data || [];
+    for (const p of rows) if (p?.id != null) productCache.set(String(p.id), p);
+
+    return rows;
+  } catch (err) {
+    toast("❌ Erreur chargement Produits/Catégories", true);
+    return [];
+  }
 }
 
-async function createProducts(payload) {
-    // Le controller lit $_POST[] et $_POST[] -> form-urlencoded
-    const body = new URLSearchParams ({
-        sku: (payload.sku ?? "").toString().trim(),
-        title: (payload.title ?? "").toString().trim(),
-        price: (payload.price ?? "").toString().trim(),
-        stock: (payload.stock ?? "").toString().trim(),
-        category_id: (payload.category_id ?? "").toString().trim(),
-    });
+async function fetchCategories() {
+  try {
+    const res = await fetch(CATEGORIES_ROUTE, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("Erreur GET Catégories");
+    const data = await res.json();
+    const rows = Array.isArray(data) ? data : data.data || [];
+    categoryCache.clear();
+    for (const c of rows) if (c?.id != null) categoryCache.set(String(c.id), c);
+    return rows;
+  } catch (err) {
+    toast("❌ Impossible de charger les catégories", true);
+    console.error(err);
+    return [];
+  }
+}
 
-    const res = await fetch(PRODUCTS.createProduct, {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        },
-        body,
-    });
 
-    if (!res.ok) {
-        let msg = "Erreur POST";
-        try {
-            const e = await res.json();
-            if (e.message || e.error) msg = e.message || e.error;
-        } catch {}
-        throw new Error(msg);
-    }
-    return res.json(); 
+async function createProduct(payload) {
+  const body = new URLSearchParams({
+    sku: (payload.sku ?? "").trim(),
+    title: (payload.title ?? "").trim(),
+    price: (payload.price ?? "").trim(),
+    stock: (payload.stock ?? "").trim(),
+    category_id: (payload.category_id ?? "").trim(),
+  });
+  const res = await fetch(PRODUCTS.createProduct, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    },
+    body,
+  });
+  if (!res.ok) {
+    let msg = "Erreur création";
+    try { const e = await res.json(); msg = e.message || e.error || msg; } catch {}
+    throw new Error(msg);
+  }
+  return res.json();
 }
 
 async function editProduct(id, payload) {
   const body = new URLSearchParams({
-    sku: (payload.sku ?? "").toString().trim(),
-    title: (payload.title ?? "").toString().trim(),
-    price: (payload.price ?? "").toString().trim(),
-    stock: (payload.stock ?? "").toString().trim(),
-    categorie_id: (payload.category_id ?? "").toString().trim(),
+    sku: (payload.sku ?? "").trim(),
+    title: (payload.title ?? "").trim(),
+    price: (payload.price ?? "").trim(),
+    stock: (payload.stock ?? "").trim(),
+    category_id: (payload.category_id ?? "").trim(),
   });
-
   const res = await fetch(PRODUCTS.editProduct(id), {
     method: "POST",
     headers: {
@@ -76,64 +98,41 @@ async function editProduct(id, payload) {
     body,
   });
   if (!res.ok) {
-    let msg = "Erreur EDIT";
-    try {
-      const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
-    } catch {}
+    let msg = "Erreur édition";
+    try { const e = await res.json(); msg = e.message || e.error || msg; } catch {}
     throw new Error(msg);
   }
-  return res.json(); // {message: "updated"}
+  return res.json();
 }
 
 async function deleteProduct(id) {
-  // Le controller supprime si $_GET['delete'] est présent -> GET suffit
   const res = await fetch(PRODUCTS.deleteProduct(id), {
     method: "GET",
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
-    let msg = "Erreur DELETE";
-    try {
-      const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
-    } catch {}
+    let msg = "Erreur suppression";
+    try { const e = await res.json(); msg = e.message || e.error || msg; } catch {}
     throw new Error(msg);
   }
-  return res.json(); // {message: "deleted"}
+  return res.json();
 }
 
-async function fetchCategories() {
-  const res = await fetch(CATEGORIES_ROUTE, {
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) throw new Error("Erreur GET Categories");
-  const data = await res.json();
-  const rows = Array.isArray(data) ? data : data.data || [];
+// ---------- UI ----------
 
-  // Mise à jour du cache
-  categoryCache.clear();
-  for (const c of rows) if (c && c.id != null) categoryCache.set(String(c.id), c);
-  return rows;
+function populateCategorySelect(selectEl) {
+  selectEl.innerHTML = "";
+  const defaultOption = document.createElement("option");
+  defaultOption.value = "";
+  defaultOption.textContent = "-- Choisir une catégorie --";
+  selectEl.appendChild(defaultOption);
+  for (const [id, cat] of categoryCache.entries()) {
+    const opt = document.createElement("option");
+    opt.value = id;
+    opt.textContent = cat.name;
+    selectEl.appendChild(opt);
+  }
 }
-
-function populateCategorySelect(selectElement) {
-    selectElement.innerHTML = '';
-    
-    const defaultOption = document.createElement('option');
-    defaultOption.value = '';
-    defaultOption.textContent = '-- Choisir une catégorie --';
-    selectElement.appendChild(defaultOption);
-
-    for (const [id, cat] of categoryCache.entries()) {
-        const option = document.createElement('option');
-        option.value = id;
-        option.textContent = cat.name;
-        selectElement.appendChild(option);
-    }
-}
-
-// --------- UI rendering ----------
 
 function renderList(items) {
   const ul = document.getElementById("product-list");
@@ -141,201 +140,179 @@ function renderList(items) {
   if (!items.length) {
     const li = document.createElement("li");
     li.className = "list__empty";
-    li.textContent = "Aucune note.";
+    li.textContent = "Aucun produit.";
     ul.appendChild(li);
     return;
   }
-  for (const it of items) {
-    const li = renderItem(it);
-    ul.appendChild(li);
-  }
+  for (const p of items) ul.appendChild(renderItem(p));
 }
 
 function renderItem(product) {
   const li = document.createElement("li");
   li.className = "list__item";
-  li.dataset.id = String(product.id);
+  li.dataset.id = product.id;
 
   const title = document.createElement("strong");
-  title.textContent = product.sku || "(Sans titre)";
+  title.textContent = product.sku || "(Sans SKU)";
 
   const content = document.createElement("p");
   content.textContent = product.title || "";
 
-  const small = document.createElement("small");
-  small.className = "muted";
-  const dt = product.created_at ? new Date(product.created_at) : null;
-  small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
+  const category = document.createElement("small");
+  category.className = "muted";
+  category.textContent = product.category || "";
 
-  // Actions: Éditer / Supprimer
   const actions = document.createElement("div");
   actions.style.display = "flex";
   actions.style.gap = ".5rem";
-  actions.style.marginTop = ".25rem";
 
   const editBtn = document.createElement("button");
   editBtn.type = "button";
   editBtn.className = "btn btn-ghost";
   editBtn.textContent = "Éditer";
   editBtn.dataset.action = "edit";
-  editBtn.dataset.id = String(product.id);
+  editBtn.dataset.id = product.id;
 
   const delBtn = document.createElement("button");
   delBtn.type = "button";
   delBtn.className = "btn btn-ghost";
   delBtn.textContent = "Supprimer";
   delBtn.dataset.action = "delete";
-  delBtn.dataset.id = String(product.id);
+  delBtn.dataset.id = product.id;
 
   actions.append(editBtn, delBtn);
-
-  li.append(title, content, small, actions);
+  li.append(title, content, category, actions);
   return li;
 }
 
-// Passe un <li> en mode édition (inline)
+// Inline editing
 function enterEditMode(li, product) {
-  li.innerHTML = ""; // reset
-
+  li.innerHTML = "";
   const form = document.createElement("form");
   form.className = "grid gap-2";
 
-  const skuLabel = document.createElement("label");
-  skuLabel.className = "label";
-  skuLabel.textContent = "Sku";
   const skuInput = document.createElement("input");
-  skuInput.className = "input";
-  skuInput.value = product.title || "";
+  skuInput.value = product.sku || "";
   skuInput.name = "sku";
   skuInput.required = true;
+  skuInput.className = "input";
 
-  const titleLabel = document.createElement("label");
-  titleLabel.className = "label";
-  titleLabel.textContent = "Nom";
   const titleInput = document.createElement("input");
-  titleInput.className = "input";
   titleInput.value = product.title || "";
   titleInput.name = "title";
   titleInput.required = true;
+  titleInput.className = "input";
 
-  const priceLabel = document.createElement("label");
-  priceLabel.className = "label";
-  priceLabel.textContent = "Prix";
   const priceInput = document.createElement("input");
-  priceInput.className = "input";
   priceInput.type = "number";
   priceInput.value = product.price || "";
   priceInput.name = "price";
   priceInput.required = true;
+  priceInput.className = "input";
 
-  const stockLabel = document.createElement("label");
-  stockLabel.className = "label";
-  stockLabel.textContent = "Stock";
   const stockInput = document.createElement("input");
-  stockInput.className = "input";
   stockInput.type = "number";
   stockInput.value = product.stock || "";
   stockInput.name = "stock";
   stockInput.required = true;
+  stockInput.className = "input";
+
+  const categorySelect = document.createElement("select");
+  categorySelect.name = "category_id";
+  categorySelect.className = "input";
+  populateCategorySelect(categorySelect);
+  categorySelect.value = product.category_id || "";
 
   const row = document.createElement("div");
   row.style.display = "flex";
   row.style.gap = ".5rem";
+
   const saveBtn = document.createElement("button");
-  saveBtn.className = "btn";
   saveBtn.type = "submit";
+  saveBtn.className = "btn";
   saveBtn.textContent = "Enregistrer";
 
   const cancelBtn = document.createElement("button");
-  cancelBtn.className = "btn btn-ghost";
   cancelBtn.type = "button";
+  cancelBtn.className = "btn btn-ghost";
   cancelBtn.textContent = "Annuler";
 
   row.append(saveBtn, cancelBtn);
-
-  form.append(skuLabel, skuInput, titleLabel, titleInput, priceLabel,priceInput, stockLabel, stockInput, row);
+  form.append(skuInput, titleInput, priceInput, stockInput, categorySelect, row);
   li.append(form);
 
-  // Submit edit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       await editProduct(product.id, {
-        sku: skuInput.value.trim(),
-        title: titleInput.value.trim(),
-        price: priceInput.value.trim(),
-        stock: stockInput.value.trim(),
+        sku: skuInput.value,
+        title: titleInput.value,
+        price: priceInput.value,
+        stock: stockInput.value,
+        category_id: categorySelect.value,
       });
-      // refresh list
-      const items = await fetchProducts();
-      renderList(items);
-      toast("✅ Modifié");
+      renderList(await fetchProducts());
+      toast("✅ Produit modifié");
     } catch (err) {
-      toast("❌ " + (err?.message || "Erreur édition"), true);
+      toast("❌ " + (err.message || "Erreur édition"), true);
     }
   });
 
-  // Cancel -> re-render item
   cancelBtn.addEventListener("click", () => {
     const fresh = productCache.get(String(product.id)) || product;
-    const freshLi = renderItem(fresh);
-    li.replaceWith(freshLi);
+    li.replaceWith(renderItem(fresh));
   });
 }
 
-// --------- Boot ----------
+// ---------- Init ----------
 
 export async function initProducts() {
   const form = document.getElementById("ProductForm");
   const refreshBtn = document.getElementById("refreshProductBtn");
   const listEl = document.getElementById("product-list");
   const categorySelect = document.getElementById("product-category-select");
-  try {
 
+  try {
     await fetchCategories();
     populateCategorySelect(categorySelect);
-
     renderList(await fetchProducts());
   } catch (e) {
     console.error(e);
-    toast("❌ Erreur au chargement (Produits/Catégories).", true, "productFormMsg");
+    toast("❌ Erreur chargement Produits/Catégories", true);
   }
 
-  // Création
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const fd = new FormData(form);
-    const payload = {
-      sku: (fd.get("sku") || "").toString().trim(),
-      title: (fd.get("title") || "").toString().trim(),
-      price: (fd.get("price") || "").toString().trim(),
-      stock: (fd.get("stock") || "").toString().trim(),
-      category_id: (fd.get("category_id") || "").toString().trim(),
-    };
     try {
-      await createProducts(payload);
+      await createProduct({
+        sku: fd.get("sku")?.toString().trim(),
+        title: fd.get("title")?.toString().trim(),
+        price: fd.get("price")?.toString().trim(),
+        stock: fd.get("stock")?.toString().trim(),
+        category_id: fd.get("category_id")?.toString().trim() || null,
+      });
       form.reset();
       renderList(await fetchProducts());
-      toast("✅ Produit ajouté", false, "productFormMsg");
-    } catch (e) {
-      toast("❌ " + e.message, true, "productFormMsg");
+      toast("✅ Produit ajouté");
+    } catch (err) {
+      toast("❌ " + (err.message || "Erreur création"), true);
     }
   });
 
-  // Rafraîchir
   refreshBtn.addEventListener("click", async () => {
     try {
-      await fetchCategories(); 
-      populateCategorySelect(categorySelect); 
+      await fetchCategories();
+      populateCategorySelect(categorySelect);
       renderList(await fetchProducts());
-      toast("Liste Produits rafraîchie", false, "productFormMsg");
+      toast("Liste Produits rafraîchie");
     } catch (e) {
       console.error(e);
-      toast("❌ Échec rafraîchissement Produits", true, "productFormMsg")
+      toast("❌ Échec rafraîchissement Produits", true);
     }
   });
 
-  // Délégation des actions Éditer / Supprimer
+  // Delegation: Edit/Delete
   listEl.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
@@ -350,41 +327,16 @@ export async function initProducts() {
     }
 
     if (btn.dataset.action === "delete") {
-      if (!confirm("Supprimer cet Produit ?")) return;
+      if (!confirm("Supprimer ce produit ?")) return;
       try {
         await deleteProduct(id);
         renderList(await fetchProducts());
-        toast("🗑️ Produit supprimé", false, "productFormMsg");
+        toast("🗑️ Produit supprimé");
       } catch (err) {
-        toast("❌ " + (err?.message || "Erreur suppression"), true, "productFormMsg");
+        toast("❌ " + (err.message || "Erreur suppression"), true);
       }
-    }
-  })
-
-  // Toggle light/dark + animation
-  themeToggle.addEventListener("click", () => {
-    const root = document.body;
-    const current = root.getAttribute("data-theme") || "light";
-    root.setAttribute("data-theme", current === "light" ? "dark" : "light");
-  });
-
-  const searchBddInput = document.getElementById("research-bdd");
-  searchBddInput.addEventListener("input", async function (e) {
-    const query = e.target.value.toLowerCase();
-    console.log(query);
-
-    try {
-      if (query.length > 0) {
-        const globalResults = await globalSearch(query);
-
-        renderGlobalResults(globalResults);
-      } else {
-        renderGlobalResults({ customers: [], categories: [], products: [], orders: [] });
-      }
-    } catch (e) {
-      console.error(e);
-      toast("x " + (e.message || "Erreur de recherche"), true);
     }
   });
 }
 
+document.addEventListener("DOMContentLoaded", initProducts);

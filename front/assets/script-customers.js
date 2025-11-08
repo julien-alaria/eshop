@@ -1,6 +1,6 @@
 import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
 
-const ROUTES = {
+const CUSTOMERS = {
   index: `${API_BASE}/?route=customer.index`,
   create: `${API_BASE}/?route=customer.create`,
   edit: (id) => `${API_BASE}/?route=customer.edit&id=${encodeURIComponent(id)}`,
@@ -13,100 +13,127 @@ const customerCache = new Map();
 // --------- API calls ----------
 
 async function fetchCustomers() {
-  const res = await fetch(ROUTES.index, {
-    headers: { Accept: "application/json" },
-  });
-  console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}`);
-  if (!res.ok) throw new Error("Erreur GET Customers");
-  const data = await res.json();
-  // Controller renvoie un tableau brut
-  const rows = Array.isArray(data) ? data : data.data || [];
-  // maj cache
-  customerCache.clear();
-  for (const n of rows) if (n && n.id != null) customerCache.set(String(n.id), n);
-  return rows;
+  try {
+    const res = await fetch(CUSTOMERS.index, {
+      headers: { Accept: "application/json" },
+    });
+
+    const text = await res.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      console.error("Réponse serveur non JSON :", text);
+      throw new Error("Impossible de récupérer les clients.");
+    }
+
+    if (!data.success) {
+      throw new Error(data.message || "Erreur serveur inconnue");
+    }
+
+    // Mettre à jour le cache
+    for (const c of data.data || []) {
+      customerCache.set(String(c.id), c);
+    }
+
+    return data.data || [];
+  } catch (err) {
+    console.error(err);
+    throw new Error("Impossible de récupérer les clients.");
+  }
 }
 
 async function createCustomer(payload) {
   const body = new URLSearchParams({
-    email: (payload.email ?? "").toString().trim(),
-    name: (payload.name ?? "").toString().trim(),
+    email: (payload.email ?? "").trim(),
+    name: (payload.name ?? "").trim(),
   });
 
-  const res = await fetch(ROUTES.create, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-    },
-    body,
-  });
+  try {
+    const res = await fetch(CUSTOMERS.create, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body,
+    });
 
-  if (!res.ok) {
-    let msg = "Erreur POST Customers";
-    try {
-      const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
-    } catch {}
-    throw new Error(msg);
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.message || e.error || "Erreur POST Customers");
+    }
+
+    return res.json();
+  } catch (err) {
+    console.error(err);
+    throw err;
   }
-  return res.json(); // {message: "success"}
 }
 
 async function editCustomer(id, payload) {
   const body = new URLSearchParams({
-    email: (payload.email ?? "").toString().trim(),
-    name: (payload.name ?? "").toString().trim(),
+    email: (payload.email ?? "").trim(),
+    name: (payload.name ?? "").trim(),
   });
 
-  const res = await fetch(ROUTES.edit(id), {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-    },
-    body,
-  });
-  if (!res.ok) {
-    let msg = "Erreur EDIT Customer";
-    try {
-      const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
-    } catch {}
-    throw new Error(msg);
+  try {
+    const res = await fetch(CUSTOMERS.edit(id), {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+      },
+      body,
+    });
+
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.message || e.error || "Erreur EDIT Customer");
+    }
+
+    return res.json();
+  } catch (err) {
+    console.error(err);
+    throw err;
   }
-  return res.json(); // {message: "updated"}
 }
 
 async function deleteCustomer(id) {
-  const res = await fetch(ROUTES.delete(id), {
-    method: "GET",
-    headers: { Accept: "application/json" },
-  });
-  if (!res.ok) {
-    let msg = "Erreur DELETE Customers";
-    try {
-      const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
-    } catch {}
-    throw new Error(msg);
+  try {
+    const res = await fetch(CUSTOMERS.delete(id), {
+      method: "GET",
+      headers: { Accept: "application/json" },
+    });
+
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      throw new Error(e.message || e.error || "Erreur DELETE Customers");
+    }
+
+    return res.json();
+  } catch (err) {
+    console.error(err);
+    throw err;
   }
-  return res.json(); // {message: "deleted"}
 }
 
-function renderList(items) {
-  const ul = document.getElementById("customer-list");
+// --------- Rendu ----------
+
+function renderList(items, containerId = "customer-list") {
+  const ul = document.getElementById(containerId);
   ul.innerHTML = "";
+
   if (!items.length) {
     const li = document.createElement("li");
     li.className = "list__empty";
-    li.textContent = "Aucune client.";
+    li.textContent = containerId === "customer-list" ? "Aucun client." : "Aucun résultat.";
     ul.appendChild(li);
     return;
   }
+
   for (const it of items) {
-    const li = renderItem(it);
-    ul.appendChild(li);
+    ul.appendChild(renderItem(it));
   }
 }
 
@@ -116,7 +143,7 @@ function renderItem(customer) {
   li.dataset.id = String(customer.id);
 
   const title = document.createElement("strong");
-  title.textContent = customer.name || "(Sans titre)";
+  title.textContent = customer.name || "(Sans nom)";
 
   const content = document.createElement("p");
   content.textContent = customer.email || "";
@@ -126,7 +153,6 @@ function renderItem(customer) {
   const dt = customer.created_at ? new Date(customer.created_at) : null;
   small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
 
-  // Actions: Éditer / Supprimer
   const actions = document.createElement("div");
   actions.style.display = "flex";
   actions.style.gap = ".5rem";
@@ -147,14 +173,15 @@ function renderItem(customer) {
   delBtn.dataset.id = String(customer.id);
 
   actions.append(editBtn, delBtn);
-
   li.append(title, content, small, actions);
+
   return li;
 }
 
-// Passe un <li> en mode édition (inline)
+// --------- Edit mode ----------
+
 function enterEditMode(li, customer) {
-  li.innerHTML = ""; // reset
+  li.innerHTML = "";
 
   const form = document.createElement("form");
   form.className = "grid gap-2";
@@ -180,6 +207,7 @@ function enterEditMode(li, customer) {
   const row = document.createElement("div");
   row.style.display = "flex";
   row.style.gap = ".5rem";
+
   const saveBtn = document.createElement("button");
   saveBtn.className = "btn";
   saveBtn.type = "submit";
@@ -191,28 +219,28 @@ function enterEditMode(li, customer) {
   cancelBtn.textContent = "Annuler";
 
   row.append(saveBtn, cancelBtn);
-
   form.append(nameLabel, nameInput, emailLabel, emailInput, row);
   li.append(form);
 
-  // Submit edit
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
+    saveBtn.disabled = true;
+    cancelBtn.disabled = true;
     try {
       await editCustomer(customer.id, {
         email: emailInput.value.trim(),
         name: nameInput.value.trim(),
       });
-      // refresh list
-      const items = await fetchCustomers();
-      renderList(items);
+      renderList(await fetchCustomers());
       toast("✅ Modifié", false, "customerFormMsg");
     } catch (err) {
       toast("❌ " + (err?.message || "Erreur édition"), true, "customerFormMsg");
+    } finally {
+      saveBtn.disabled = false;
+      cancelBtn.disabled = false;
     }
   });
 
-  // Cancel -> re-render item
   cancelBtn.addEventListener("click", () => {
     const fresh = customerCache.get(String(customer.id)) || customer;
     const freshLi = renderItem(fresh);
@@ -227,21 +255,23 @@ export async function initCustomers() {
   const refreshBtn = document.getElementById("refreshBtn");
   const themeToggle = document.getElementById("themeToggle");
   const listEl = document.getElementById("customer-list");
+  const searchBddInput = document.getElementById("research-bdd");
 
+  // Chargement initial
   try {
     renderList(await fetchCustomers());
   } catch (e) {
     console.error(e);
-    toast("x Erreur au chargement des clients.", true, "customerFormMsg");
+    toast("❌ Erreur au chargement des clients.", true, "customerFormMsg");
   }
 
-  // Création
+  // Création client
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const fd = new FormData(form);
     const payload = {
-      email: (fd.get("email") || "").toString().trim(),
-      name: (fd.get("name") || "").toString().trim(),
+      email: (fd.get("email") || "").trim(),
+      name: (fd.get("name") || "").trim(),
     };
     try {
       await createCustomer(payload);
@@ -255,16 +285,19 @@ export async function initCustomers() {
 
   // Rafraîchir
   refreshBtn.addEventListener("click", async () => {
+    refreshBtn.disabled = true;
     try {
       renderList(await fetchCustomers());
-      toast ("Liste Clients rafraîchie", false, "customerFormMsg");
+      toast("✅ Liste Clients rafraîchie", false, "customerFormMsg");
     } catch (e) {
       console.error(e);
-      toast("x Echec rafraîchissement", true, "customerFormMsg")
+      toast("❌ Echec rafraîchissement", true, "customerFormMsg");
+    } finally {
+      refreshBtn.disabled = false;
     }
   });
 
-  // Délégation des actions Éditer / Supprimer
+  // Actions Éditer / Supprimer (délégation)
   listEl.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
@@ -279,41 +312,42 @@ export async function initCustomers() {
     }
 
     if (btn.dataset.action === "delete") {
-      if (!confirm("Supprimer cette note ?")) return;
+      if (!confirm("Supprimer ce client ?")) return;
+      btn.disabled = true;
       try {
         await deleteCustomer(id);
         renderList(await fetchCustomers());
         toast("🗑️ Supprimé", false, "customerFormMsg");
       } catch (err) {
         toast("❌ " + (err?.message || "Erreur suppression"), true, "customerFormMsg");
+      } finally {
+        btn.disabled = false;
       }
     }
   });
 
-  // Toggle light/dark + animation
+  // Toggle light/dark
   themeToggle.addEventListener("click", () => {
     const root = document.body;
     const current = root.getAttribute("data-theme") || "light";
     root.setAttribute("data-theme", current === "light" ? "dark" : "light");
   });
 
-  const searchBddInput = document.getElementById("research-bdd");
-  searchBddInput.addEventListener("input", async function (e) {
-    const query = e.target.value.toLowerCase();
-    console.log(query);
-
+  // Recherche globale
+  searchBddInput.addEventListener("input", async (e) => {
+    const query = e.target.value.toLowerCase().trim();
     try {
       if (query.length > 0) {
         const globalResults = await globalSearch(query);
-
         renderGlobalResults(globalResults);
       } else {
-        renderGlobalResults({ customers: [], categories: [], products: [], orders: [] });
+        renderList(await fetchCustomers());
       }
-    } catch (e) {
-      console.error(e);
-      toast("x " + (e.message || "Erreur de recherche"), true);
+    } catch (err) {
+      console.error(err);
+      toast("❌ " + (err?.message || "Erreur de recherche"), true);
     }
   });
 }
 
+document.addEventListener("DOMContentLoaded", initCustomers);

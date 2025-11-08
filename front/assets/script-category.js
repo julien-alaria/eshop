@@ -1,47 +1,69 @@
-import { API_BASE, toast, globalSearch, renderGlobalResults  } from "./scripts-base.js";
+import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
 
 const CATEGORIES = {
-    index: `${API_BASE}/?route=category.index`,
-    create: `${API_BASE}/?route=category.insert`,
-    update: (id) => `${API_BASE}/?route=category.update&id=${encodeURIComponent(id)}`,
-    delete: (id) => `${API_BASE}/?route=categorie.delete&id=${encodeURIComponent(id)}&delete=1`,
+  index: `${API_BASE}/?route=category.index`,
+  create: `${API_BASE}/?route=category.create`,
+  edit: (id) => `${API_BASE}/?route=category.edit&id=${encodeURIComponent(id)}`,
+  delete: (id) =>
+    `${API_BASE}/?route=category.delete&id=${encodeURIComponent(id)}&delete=1`,
 };
 
 const categoryCache = new Map();
 
-//---------------- API calls ------------------------
+// --------- API calls ----------
 
-async function listCategories() {
+async function fetchCategories() {
+  try {
     const res = await fetch(CATEGORIES.index, {
-        headers: { Accept: "application/json" },
+      headers: { Accept: "application/json" },
     });
+
     console.log(`Statut de la requête : ${res.status}, ok : ${res.ok}`);
-    if (!res.ok) throw new Error("Erreur GET Category");
-    const data = await res.json();
-    // Controller renvoie un tableau brut
-    const rows = Array.isArray(data) ? data : data.data || [];
-    // maj cache
-    categoryCache.clear();
-    for (const n of rows) if (n && n.id != null) categoryCache.set(String(n.id), n);
-    return rows;
-}
-
-async function insertCategorie(payload) {
-    const body = new URLSearchParams({
-        name: (payload.name ?? "").toString().trim(),
-    });
-
-    const res = await fetch(CATEGORIES.create, {
-        method: "POST",
-        headers: {
-            Accept: "application/json",
-            "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-        },
-        body,
-    });
 
     if (!res.ok) {
-    let msg = "Erreur POST Categories";
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || err.error || "Erreur GET Categories");
+    }
+
+    const data = await res.json().catch(() => null);
+
+    // Assure qu'on a un tableau, sinon vide
+    const rows = Array.isArray(data)
+      ? data
+      : Array.isArray(data?.data)
+      ? data.data
+      : [];
+
+    // Met à jour le cache
+    categoryCache.clear();
+    for (const n of rows) {
+      if (n && n.id != null) categoryCache.set(String(n.id), n);
+    }
+
+    return rows;
+  } catch (err) {
+    console.error("fetchCategories:", err);
+    return []; // Retourne toujours un tableau pour éviter de casser le front
+  }
+}
+
+async function createCategory(payload) {
+  // Le controller lit $_POST['title'] et $_POST['content'] -> form-urlencoded
+  const body = new URLSearchParams({
+    name: (payload.name ?? "").toString().trim(),
+  });
+
+  const res = await fetch(CATEGORIES.create, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+    },
+    body,
+  });
+
+  if (!res.ok) {
+    let msg = "Erreur POST Customers";
     try {
       const e = await res.json();
       if (e.message || e.error) msg = e.message || e.error;
@@ -49,15 +71,14 @@ async function insertCategorie(payload) {
     throw new Error(msg);
   }
   return res.json(); // {message: "success"}
-
 }
 
-async function editCategorie(id, payload) {
-    const body = new URLSearchParams({
+async function editCategory(id, payload) {
+  const body = new URLSearchParams({
     name: (payload.name ?? "").toString().trim(),
   });
 
-  const res = await fetch(CATEGORIES.update(id), {
+  const res = await fetch(CATEGORIES.edit(id), {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -66,7 +87,7 @@ async function editCategorie(id, payload) {
     body,
   });
   if (!res.ok) {
-    let msg = "Erreur UPDATE Categorie";
+    let msg = "Erreur EDIT Customer";
     try {
       const e = await res.json();
       if (e.message || e.error) msg = e.message || e.error;
@@ -76,13 +97,14 @@ async function editCategorie(id, payload) {
   return res.json(); // {message: "updated"}
 }
 
-async function deleteCategorie(id) {
-    const res = await fetch(CATEGORIES.delete(id), {
+async function deleteCategory(id) {
+  // Le controller supprime si $_GET['delete'] est présent -> GET suffit
+  const res = await fetch(CATEGORIES.delete(id), {
     method: "GET",
     headers: { Accept: "application/json" },
   });
   if (!res.ok) {
-    let msg = "Erreur DELETE Categorie";
+    let msg = "Erreur DELETE Categories";
     try {
       const e = await res.json();
       if (e.message || e.error) msg = e.message || e.error;
@@ -93,58 +115,61 @@ async function deleteCategorie(id) {
 }
 
 function renderList(items) {
-    const ul = document.getElementById("category-list")
-    ul.innerHTML = "";
-    if (!items.length) {
-        const li = document.createElement("li");
-        li.className = "list__empty";
-        li.textContent = "Aucune client.";
-        ul.appendChild(li);
-        return;
-    }
-    for (const it of items) {
-        const li = renderItem(it);
-        ul.appendChild(li);
-    }
+  const ul = document.getElementById("category-list");
+  ul.innerHTML = "";
+  if (!items.length) {
+    const li = document.createElement("li");
+    li.className = "list__empty";
+    li.textContent = "Aucune catégorie.";
+    ul.appendChild(li);
+    return;
+  }
+  for (const it of items) {
+    const li = renderItem(it);
+    ul.appendChild(li);
+  }
 }
 
 function renderItem(category) {
-    const li = document.createElement("li");
-    li.className = "list__item";
-    li.dataset.id = String(category.id);
+  const li = document.createElement("li");
+  li.className = "list__item";
+  li.dataset.id = String(category.id);
 
-    const title = document.createElement("strong");
-    title.textContent = category.name || "(Sans titre)";
+  const title = document.createElement("strong");
+  title.textContent = category.name || "(Sans titre)";
 
-    const small = document.createElement("small");
-    small.className = "muted";
-    const dt = category.created_at ? new Date(category.created_at) : null;
-    small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
+  const content = document.createElement("p");
+  content.textContent = category.id || "";
 
-    // Actions: Éditer / Supprimer
-    const actions = document.createElement("div");
-    actions.style.display = "flex";
-    actions.style.gap = ".5rem";
-    actions.style.marginTop = ".25rem";
+  const small = document.createElement("small");
+  small.className = "muted";
+  const dt = category.created_at ? new Date(category.created_at) : null;
+  small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
 
-    const editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "btn btn-ghost";
-    editBtn.textContent = "Éditer";
-    editBtn.dataset.action = "edit";
-    editBtn.dataset.id = String(category.id);
+  // Actions: Éditer / Supprimer
+  const actions = document.createElement("div");
+  actions.style.display = "flex";
+  actions.style.gap = ".5rem";
+  actions.style.marginTop = ".25rem";
 
-    const delBtn = document.createElement("button");
-    delBtn.type = "button";
-    delBtn.className = "btn btn-ghost";
-    delBtn.textContent = "Supprimer";
-    delBtn.dataset.action = "delete";
-    delBtn.dataset.id = String(category.id);
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "btn btn-ghost";
+  editBtn.textContent = "Éditer";
+  editBtn.dataset.action = "edit";
+  editBtn.dataset.id = String(category.id);
 
-    actions.append(editBtn, delBtn);
+  const delBtn = document.createElement("button");
+  delBtn.type = "button";
+  delBtn.className = "btn btn-ghost";
+  delBtn.textContent = "Supprimer";
+  delBtn.dataset.action = "delete";
+  delBtn.dataset.id = String(category.id);
 
-    li.append(title,small, actions);
-    return li;
+  actions.append(editBtn, delBtn);
+
+  li.append(title, content, small, actions);
+  return li;
 }
 
 // Passe un <li> en mode édition (inline)
@@ -185,12 +210,11 @@ function enterEditMode(li, category) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
-      await editCategorie(category.id, {
+      await editCategory(category.id, {
         name: nameInput.value.trim(),
       });
-
       // refresh list
-      const items = await listCategories();
+      const items = await fetchCategories();
       renderList(items);
       toast("✅ Modifié", false, "categoryFormMsg");
     } catch (err) {
@@ -208,17 +232,17 @@ function enterEditMode(li, category) {
 
 // --------- Boot ----------
 
-export async function initCategory() {
+export async function initCategories() {
   const form = document.getElementById("CategoryForm");
   const refreshBtn = document.getElementById("refreshBtn");
   const themeToggle = document.getElementById("themeToggle");
   const listEl = document.getElementById("category-list");
 
   try {
-    renderList(await listCategories());
+    renderList(await fetchCategories());
   } catch (e) {
     console.error(e);
-    toast("x Erreur au chargement des categoriess.", true, "categoryFormMsg");
+    toast("x Erreur au chargement des categories", true, "categoryFormMsg");
   }
 
   // Création
@@ -226,26 +250,26 @@ export async function initCategory() {
     ev.preventDefault();
     const fd = new FormData(form);
     const payload = {
-      name: (fd.get("category") || "").toString().trim(),
+      name: (fd.get("name") || "").toString().trim(),
     };
     try {
-      await insertCategorie(payload);
+      await createCategory(payload);
       form.reset();
-      renderList(await listCategories());
-      toast("✅ Ajouté", false, "categorieFormMsg");
+      renderList(await fetchCategories());
+      toast("✅ Ajouté", false, "categoryFormMsg");
     } catch (e) {
-      toast("❌ " + e.message, true, "categorieFormMsg");
+      toast("❌ " + e.message, true, "categoryFormMsg");
     }
   });
 
   // Rafraîchir
   refreshBtn.addEventListener("click", async () => {
     try {
-      renderList(await listCategories());
-      toast ("Liste Categories rafraîchie", false, "categorieFormMsg");
+      renderList(await fetchCategories());
+      toast ("Liste Clients rafraîchie", false, "categoryFormMsg");
     } catch (e) {
       console.error(e);
-      toast("x Echec rafraîchissement", true, "categorieFormMsg")
+      toast("x Echec rafraîchissement", true, "categoryFormMsg")
     }
   });
 
@@ -264,13 +288,13 @@ export async function initCategory() {
     }
 
     if (btn.dataset.action === "delete") {
-      if (!confirm("Supprimer cette categorie ?")) return;
+      if (!confirm("Supprimer cette catégorie ?")) return;
       try {
-        await deleteCategorie(id);
-        renderList(await listCategories());
-        toast("🗑️ Supprimé", false, "categorieFormMsg");
+        await deleteCategory(id);
+        renderList(await fetchCategories());
+        toast("🗑️ Supprimé", false, "categoryFormMsg");
       } catch (err) {
-        toast("❌ " + (err?.message || "Erreur suppression"), true, "categorieFormMsg");
+        toast("❌ " + (err?.message || "Erreur suppression"), true, "categoryFormMsg");
       }
     }
   });
@@ -293,7 +317,7 @@ export async function initCategory() {
 
         renderGlobalResults(globalResults);
       } else {
-        renderGlobalResults({ customers: [], categories: [], products: [], orders: [] });
+        renderList(await fetchCategories());
       }
     } catch (e) {
       console.error(e);
@@ -302,5 +326,5 @@ export async function initCategory() {
   });
 }
 
-
+document.addEventListener("DOMContentLoaded", initCategories);
 
