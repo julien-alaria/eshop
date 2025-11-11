@@ -1,24 +1,32 @@
 <?php
 
-function getCustomers($pdo)
-{
-    return $pdo->query("SELECT * FROM customers ORDER BY created_at DESC")->fetchAll();
+function getCustomers($pdo){
+    $sql = "SELECT * FROM customers ORDER BY created_at DESC";
+    return $pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
 }
 
-function addCustomer($pdo, $email, $name)
-{
-    $stmt = $pdo->prepare("INSERT INTO customers (email, name) VALUES (?, ?)");
-    $stmt->execute([$email, $name]);
-}
-
-function deleteCustomer($pdo, $id)
-{
-    $stmt = $pdo->prepare("DELETE FROM customers WHERE id = ?");
+function getCustomerById($pdo, $id){
+    $sql = "SELECT * FROM customers WHERE id = ?";
+    $stmt = $pdo->prepare($sql);
     $stmt->execute([$id]);
+    return $stmt->fetch(PDO::FETCH_ASSOC);
 }
 
-function updateCustomer($pdo, $id, $email, $name)
-{
-    $stmt = $pdo->prepare("UPDATE customers SET email = ?, name = ? WHERE id = ?");
-    $stmt->execute([$email, $name, $id]);
+function addCustomer($pdo, $name, $email){
+    $sql = "INSERT INTO customers(name, email) VALUES (?, ?)";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$name, $email]);
+    return $pdo->lastInsertId();
+}
+
+function updateCustomer($pdo, $id, $name, $email){
+    $sql = "UPDATE customers SET name = ?, email = ? WHERE id = ?";
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute([$name, $email, $id]);
+}
+
+function deleteCustomer($pdo, $id){
+    $sql = "DELETE FROM customers WHERE id = ?";
+    $stmt = $pdo->prepare($sql);
+    return $stmt->execute([$id]);
 }

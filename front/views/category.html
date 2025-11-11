@@ -3,19 +3,22 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Category</title>
+    <meta name="description" content="Ajouter et gérer les catégories de produits de votre boutique en ligne. Créer, rechercher et suivre les catégories.">
+    <title>Gestion des Catégories - Eshop Dashboard</title>
     <link rel="stylesheet" href="../css/style.css" />
   </head>
-    <body data-page="stats">
+    <body data-page="category">
         <div class="min-h-screen bg-gray-50 p-4 md:p-8">
             <div class="mx-auto max-w-7xl space-y-6">
 
-                <nav class="dashboard-nav">
-                    <a href="./stats.html" class="active"><span>🏠</span>Overview</a>
-                    <a href="./orders.html"><span>🛒</span>Orders</a>
-                    <a href="./products.html"><span>📦</span>Products</a>
-                    <a href="./customers.html"><span>👤</span>Customers</a>
-                    <a href="./category.html"><span>📂</span>Categories</a>
+              <header>
+
+                <nav class="dashboard-nav" role="navigation">
+                    <a href="./stats.html"><span>🏠</span class="sr-only">Overview</a>
+                    <a href="./orders.html"><span>🛒</span class="sr-only">Orders</a>
+                    <a href="./products.html"><span>📦</span class="sr-only">Products</a>
+                    <a href="./customers.html"><span>👤</span class="sr-only">Customers</a>
+                    <a href="./category.html" class="active"><span>📂</span class="sr-only">Categories</a>
                 </nav>
 
                 <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
@@ -24,61 +27,60 @@
                     <span class="toggle__label">Dark</span>
                 </button>
 
-      <main class="container grid gap-6">
-          <!-- PARTIE BARRE DE RECHERCHE -->
-          <!-- <section class="container grid gap-6">
-            <form id="ResearchForm" method="post" class="form grid gap-3">
-              <div class="grid gap-2">
-                <label for="research-bdd" class="label">Recherche en BDD</label>
-                <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
-              </div>
-            </form>
-          </section> -->
-          
-          <!-- PARTIE RESULTAT DE RECHERCHE -->
-          <!-- <section id="global-search-results" class="container grid gap-6">
-              <ul id="list" class="list">
-                  </ul>
-          </section> -->
-        <section class="card">
-          <h2 class="text-lg fw-600 mb-2">Recherche Catégorie</h2>
-          <form id="CategorySearchForm" class="form grid gap-2" onsubmit="return false;">
-            <input type="text" id="categorySearchInput" class="input" placeholder="Rechercher une catégorie...">
-          </form>
-        </section>
+              </header>
 
-        
+              <main class="container grid gap-6">
+                <h1 class="text-gray-900 text-2xl fw-700 mb-4">Gestion des Catégories</h1>
 
-        <!-- PARTIE CATEGORY -->
-        <section class="card">
-          <h2 class="text-lg fw-600 mb-2">Ajouter une Catégorie</h2>
-          <form id="CategoryForm" method="post" class="form grid gap-3">
-            <div class="grid gap-2">
-              <label for="name" class="label">Nom</label>
-              <input type="text" id="name" name="name" class="input" placeholder="Catégorie" required>
-            </div>
-            <button class="btn" type="submit">Ajouter</button>
-            <p id="categoryFormMsg" class="text-sm"></p>
-          </form>
-        </section>
+                <section class="card">
 
-        <section class="card">
-          <div class="flex items-center justify-between">
-            <h2 class="text-lg fw-600">Mes Catégories</h2>
-            <button id="refreshBtn" class="btn btn-ghost">Rafraîchir</button>
-          </div>
-          <ul id="category-list" class="list mt-3"></ul>
-        </section>
+                  <h2 class="text-lg fw-600 mb-2">Recherche Catégorie</h2>
+                  <form id="CategorySearchForm" class="form grid gap-2" onsubmit="return false;">
+                    <input type="text" id="categorySearchInput" class="input" placeholder="Rechercher une catégorie...">
+                  </form>
 
-        <div id="pagination" class="flex justify-center gap-2 mt-4"></div>
-      </main>
-      <footer class="container py-6 text-sm opacity-70">
-      <p>
-        Back: <code>php -S localhost:8000 -t public</code> (dans le dossier
-        <code>back</code>).
-      </p>
-    </footer>
+                </section>
 
+                <!-- PARTIE CATEGORY -->
+                <section class="card">
+
+                  <h2 class="text-lg fw-600 mb-2">Ajouter une Catégorie</h2>
+
+                  <form id="CategoryForm" method="post" class="form grid gap-3">
+
+                    <div class="grid gap-2">
+                      <label for="name" class="label">Nom</label>
+                      <input type="text" id="name" name="name" class="input" placeholder="Catégorie" required>
+                    </div>
+
+                    <button class="btn" type="submit">Ajouter</button>
+
+                    <p id="categoryFormMsg" class="text-sm" aria-live="polite"></p>
+
+                  </form>
+
+                </section>
+
+                <section class="card">
+
+                  <div class="flex items-center justify-between">
+                    <h2 class="text-lg fw-600">Mes Catégories</h2>
+                    <button id="refreshBtn" class="btn btn-ghost">Rafraîchir</button>
+                  </div>
+
+                  <ul id="category-list" class="list mt-3" aria-live="polite"></ul>
+
+                </section>
+
+                <div id="pagination" class="flex justify-center gap-2 mt-4"></div>
+
+              </main>
+
+              <footer class="container py-6 text-sm opacity-70">
+                <p>Back: <code>php -S localhost:8000 -t public</code> (dans le dossier
+                  <code>back</code>).
+                </p>
+              </footer>
     <script type="module" src="../assets/script-category.js" defer></script>
   </body>
 </html>

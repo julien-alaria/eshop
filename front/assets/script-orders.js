@@ -1,25 +1,32 @@
 import { API_BASE, toast } from "./scripts-base.js";
 
+// --------- ROUTES API ----------
 const ROUTES = {
   index: `${API_BASE}/?route=orders.list`,
   create: `${API_BASE}/?route=orders.create`,
   edit: (id) => `${API_BASE}/?route=orders.edit&id=${encodeURIComponent(id)}`,
   delete: (id) => `${API_BASE}/?route=orders.delete&id=${encodeURIComponent(id)}`,
-  export: `${API_BASE}/?route=orders.export`,
   show: (id) => `${API_BASE}/?route=orders.show&id=${encodeURIComponent(id)}`,
-  customers: `${API_BASE}/?route=customer.index`,
+  export: `${API_BASE}/?route=orders.export`,
+  products: `${API_BASE}/?route=products.list`,
 };
 
+const PRODUCTS = {
+  indexProduct: `${API_BASE}/?route=product.index`,
+};
+
+const ROUTES_CUSTOMERS = {
+  indexCustomer: `${API_BASE}/?route=customer.index`,
+};
+
+// --------- VARIABLES GLOBALES ----------
 const orderCache = new Map();
 const validStatuses = ["pending", "paid", "refunded", "cancelled"];
-
-// VARIABLES POUR LA PAGINATION
 let orderPage = 1;
 const ordersPerPage = 3;
 let paginatedOrders = [];
 
 // --------- UTILITAIRES ----------
-
 function createInput(labelText, name, type = "text", value = "", step) {
   const label = document.createElement("label");
   label.className = "label";
@@ -37,7 +44,6 @@ function createInput(labelText, name, type = "text", value = "", step) {
 }
 
 // --------- API CALLS ----------
-
 export async function fetchOrders() {
   const res = await fetch(ROUTES.index, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error("Erreur GET Orders");
@@ -46,25 +52,22 @@ export async function fetchOrders() {
   const rows = Array.isArray(data) ? data : data.data || [];
 
   orderCache.clear();
-  for (const n of rows) if (n && n.id != null) orderCache.set(String(n.id), n);
+  rows.forEach(n => n?.id != null && orderCache.set(String(n.id), n));
   return rows;
 }
 
-//Crée une nouvelle commande.
 async function createOrder(payload) {
-  // Conversion des types pour correspondre à la table SQLite
   const body = new URLSearchParams({
-    customer_id: Number(payload.customer_id) || 0, // INTEGER
-    status: (payload.status || "pending").toString(), // TEXT
-    total: Number(payload.total) || 0, // REAL
+    product_id: Number(payload.product_id) || 0,
+    customer_id: Number(payload.customer_id) || 0,
+    status: (payload.status || "pending").toString(),
+    total: Number(payload.total) || 0,
+    quantity: Number(payload.quantity) || 1
   });
 
   const res = await fetch(ROUTES.create, {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-    },
+    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
     body,
   });
 
@@ -72,28 +75,23 @@ async function createOrder(payload) {
     let msg = "Erreur POST Order";
     try {
       const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
+      msg = e.message || e.error || msg;
     } catch {}
     throw new Error(msg);
   }
   return res.json();
 }
 
-//Modifie une commande existante.
 async function editOrder(id, payload) {
-  // Conversion des types pour correspondre à la table SQLite
   const body = new URLSearchParams({
-    customer_id: Number(payload.customer_id) || 0, // INTEGER
-    status: (payload.status || "pending").toString(), // TEXT
-    total: Number(payload.total) || 0, // REAL
+    customer_id: Number(payload.customer_id) || 0,
+    status: (payload.status || "pending").toString(),
+    total: Number(payload.total) || 0,
   });
 
   const res = await fetch(ROUTES.edit(id), {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
-    },
+    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
     body,
   });
 
@@ -101,13 +99,12 @@ async function editOrder(id, payload) {
     let msg = "Erreur EDIT Order";
     try {
       const e = await res.json();
-      if (e.message || e.error) msg = e.message || e.error;
+      msg = e.message || e.error || msg;
     } catch {}
     throw new Error(msg);
   }
   return res.json();
 }
-
 
 export async function deleteOrder(id) {
   const res = await fetch(ROUTES.delete(id), { headers: { Accept: "application/json" } });
@@ -122,86 +119,99 @@ export async function deleteOrder(id) {
   return res.json();
 }
 
-// --------- RENDU ----------
+// --- Fetch produits ---
+let products = [];
 
-function initSearch(inputSelector, cache, renderFn) {
-  const input = document.querySelector(inputSelector);
-  if (!input) return;
-
-  input.addEventListener("input", (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    const allOrders = Array.from(cache.values());
-
-    const filtered = allOrders.filter(order =>
-      String(order.id).toLowerCase().includes(query) ||
-      String(order.customer_id).toLowerCase().includes(query) ||
-      (order.status || "").toLowerCase().includes(query) ||
-      String(order.total ?? "").toLowerCase().includes(query)
-    );
-
-    orderPage = 1; // reset pagination
-    renderFn(filtered);
-  });
+async function fetchProducts() {
+  try {
+    const res = await fetch(PRODUCTS.indexProduct, {
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error("Erreur GET Products");
+    const data = await res.json();
+    products = Array.isArray(data) ? data : data.data || [];
+    return products;
+  } catch (err) {
+    console.error("Erreur fetchProducts:", err);
+    return [];
+  }
 }
 
-export function renderList(items) {
-  const ul = document.getElementById("order-list");
-  ul.innerHTML = "";
+// --- Remplir le select des produits ---
+async function populateProductSelect(selectId = "product_id") {
+  const select = document.getElementById(selectId);
+  if (!select) return;
 
-  if (!items.length) {
-    const li = document.createElement("li");
-    li.className = "list__empty";
-    li.textContent = "Aucune commande.";
-    ul.appendChild(li);
+  const data = await fetchProducts();
+  select.innerHTML =
+    `<option value="">-- Choisir un produit --</option>` +
+    data
+      .map(
+        (p) =>
+          `<option value="${p.id}" data-price="${p.price}">
+            ${p.title || "Produit"} - ${p.price}€
+          </option>`
+      )
+      .join("");
+}
+
+
+// --- Fetch clients ---
+async function fetchCustomers() {
+  try {
+    const res = await fetch(ROUTES_CUSTOMERS.indexCustomer, { headers: { Accept: "application/json" } });
+    if (!res.ok) throw new Error("Erreur GET Customers");
+    const data = await res.json();
+    return Array.isArray(data) ? data : data.data || [];
+  } catch (err) {
+    console.error("Erreur fetchCustomers:", err);
+    return [];
+  }
+}
+
+async function populateCustomerSelect(selectId = "customerSelect") {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  try {
+    const customers = await fetchCustomers();
+    select.innerHTML = `<option value="">-- Choisir un client --</option>` +
+      customers.map(c => `<option value="${c.id}">${c.name || c.fullname || c.email}</option>`).join("");
+  } catch (err) {
+    console.error(err);
+    select.innerHTML = `<option value="">Erreur chargement clients</option>`;
+  }
+}
+
+// --------- TOTAL CALCUL AUTOMATIQUE ---------
+async function updateTotal() {
+  const productSelect = document.getElementById("product_id");
+  const quantityInput = document.getElementById("quantity");
+  const totalInput = document.getElementById("total");
+
+  if (!productSelect || !quantityInput || !totalInput) return;
+
+  const productId = productSelect.value;
+  const quantity = parseInt(quantityInput.value) || 1;
+
+  if (!productId) {
+    totalInput.value = 0;
     return;
   }
 
-  paginatedOrders = items;
-
-  const start = (orderPage - 1) * ordersPerPage;
-  const end = start + ordersPerPage;
-  const pageItems = items.slice(start, end);
-
-  for (const order of pageItems) ul.appendChild(renderItem(order));
-
-  renderPagination(items.length);
+  const products = await fetchProducts();
+  const product = products.find(p => p.id == productId);
+  totalInput.value = product ? (product.price * quantity).toFixed(2) : 0;
 }
 
-export function renderPagination(totalItems) {
-  let pagination = document.getElementById("pagination");
-  if (!pagination) {
-    pagination = document.createElement("div");
-    pagination.id = "pagination";
-    document.getElementById("order-list").after(pagination);
-  }
-
-  pagination.innerHTML = "";
-  const totalPages = Math.ceil(totalItems / ordersPerPage);
-  if (totalPages <= 1) return;
-
-  for (let i = 1; i <= totalPages; i++) {
-    const link = document.createElement("a");
-    link.href = "#";
-    link.textContent = i;
-    if (i === orderPage) link.classList.add("active");
-
-    link.addEventListener("click", (e) => {
-      e.preventDefault();
-      orderPage = i;
-      renderList(paginatedOrders);
-    });
-
-    pagination.appendChild(link);
-  }
-}
-
+// --------- RENDER / UI ----------
 export function renderItem(order) {
   const li = document.createElement("li");
   li.className = "list__item";
   li.dataset.id = String(order.id);
 
   const title = document.createElement("strong");
-  title.textContent = `Commande #${order.id} | Total: ${order.total ? order.total.toFixed(2) : "N/A"}€`;
+  title.textContent = `Commande #${order.id} | Total: ${order.total?.toFixed(2) ?? "N/A"}€`;
 
   const content = document.createElement("p");
   content.textContent = `Client ID: ${order.customer_id} | Statut: ${order.status || "N/D"}`;
@@ -232,8 +242,70 @@ export function renderItem(order) {
 
   actions.append(editBtn, delBtn);
   li.append(title, content, small, actions);
-
   return li;
+}
+
+export function renderList(items) {
+  const ul = document.getElementById("order-list");
+  ul.innerHTML = "";
+
+  if (!items.length) {
+    const li = document.createElement("li");
+    li.className = "list__empty";
+    li.textContent = "Aucune commande.";
+    ul.appendChild(li);
+    return;
+  }
+
+  paginatedOrders = items;
+  const start = (orderPage - 1) * ordersPerPage;
+  const end = start + ordersPerPage;
+  items.slice(start, end).forEach(order => ul.appendChild(renderItem(order)));
+
+  renderPagination(items.length);
+}
+
+export function renderPagination(totalItems) {
+  let pagination = document.getElementById("pagination");
+  if (!pagination) {
+    pagination = document.createElement("div");
+    pagination.id = "pagination";
+    document.getElementById("order-list").after(pagination);
+  }
+
+  pagination.innerHTML = "";
+  const totalPages = Math.ceil(totalItems / ordersPerPage);
+  if (totalPages <= 1) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = i;
+    if (i === orderPage) link.classList.add("active");
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      orderPage = i;
+      renderList(paginatedOrders);
+    });
+    pagination.appendChild(link);
+  }
+}
+
+function initSearch(inputSelector, cache, renderFn) {
+  const input = document.querySelector(inputSelector);
+  if (!input) return;
+
+  input.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const filtered = Array.from(cache.values()).filter(order =>
+      String(order.id).toLowerCase().includes(query) ||
+      String(order.customer_id).toLowerCase().includes(query) ||
+      (order.status || "").toLowerCase().includes(query) ||
+      String(order.total ?? "").toLowerCase().includes(query)
+    );
+    orderPage = 1;
+    renderFn(filtered);
+  });
 }
 
 export function enterEditMode(li, order) {
@@ -241,7 +313,7 @@ export function enterEditMode(li, order) {
   const form = document.createElement("form");
   form.className = "grid gap-2";
 
-  const customerIdInput = createInput("ID Client", "customer_id", "number", order.customer_id);
+  const customerInput = createInput("ID Client", "customer_id", "number", order.customer_id);
   const totalInput = createInput("Total (€)", "total", "number", order.total, "0.01");
 
   const statusLabel = document.createElement("label");
@@ -252,15 +324,14 @@ export function enterEditMode(li, order) {
   statusSelect.className = "input";
   statusSelect.name = "status";
   statusSelect.required = true;
-
-  let currentStatus = validStatuses.includes(String(order.status)) ? String(order.status) : "pending";
-  for (const s of validStatuses) {
+  const currentStatus = validStatuses.includes(String(order.status)) ? order.status : "pending";
+  validStatuses.forEach(s => {
     const opt = document.createElement("option");
     opt.value = s;
     opt.textContent = s.charAt(0).toUpperCase() + s.slice(1);
     if (currentStatus === s) opt.selected = true;
     statusSelect.appendChild(opt);
-  }
+  });
 
   const row = document.createElement("div");
   row.style.display = "flex";
@@ -277,20 +348,14 @@ export function enterEditMode(li, order) {
   cancelBtn.textContent = "Annuler";
 
   row.append(saveBtn, cancelBtn);
-
-  form.append(
-    customerIdInput.label, customerIdInput.input,
-    statusLabel, statusSelect,
-    totalInput.label, totalInput.input,
-    row
-  );
+  form.append(customerInput.label, customerInput.input, statusLabel, statusSelect, totalInput.label, totalInput.input, row);
   li.append(form);
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       await editOrder(order.id, {
-        customer_id: customerIdInput.input.value.trim(),
+        customer_id: customerInput.input.value.trim(),
         status: statusSelect.value.trim(),
         total: totalInput.input.value.trim(),
       });
@@ -302,12 +367,109 @@ export function enterEditMode(li, order) {
   });
 
   cancelBtn.addEventListener("click", () => {
-    const fresh = orderCache.get(String(order.id)) || order;
-    li.replaceWith(renderItem(fresh));
+    li.replaceWith(renderItem(orderCache.get(String(order.id)) || order));
   });
 }
 
-// --------- INIT ----------
+// --------- INIT ORDERS ----------
+// export async function initOrders() {
+//   const form = document.getElementById("OrderForm");
+//   const refreshBtn = document.getElementById("refreshOrderBtn");
+//   const listEl = document.getElementById("order-list");
+//   const currentTheme = localStorage.getItem("theme") || "light";
+//   document.body.setAttribute("data-theme", currentTheme);
+
+//   try { renderList(await fetchOrders()); } 
+//   catch (e) { console.error(e); toast("x Erreur au chargement des commandes.", true, "orderFormMsg"); }
+
+//   await populateProductSelect();
+//   await populateCustomerSelect();
+//   initSearch("#orderSearchInput", orderCache, renderList);
+
+//   // --- CALCUL TOTAL AU CHANGEMENT ---
+//   const productSelect = document.getElementById("product_id");
+//   const quantityInput = document.getElementById("quantity");
+//   productSelect?.addEventListener("change", updateTotal);
+//   quantityInput?.addEventListener("input", updateTotal);
+
+//   // --- AJOUT COMMANDE ---
+//   form?.addEventListener("submit", async (ev) => {
+//     ev.preventDefault();
+//     const fd = new FormData(form);
+
+//     // Récupération du produit sélectionné
+//     const productId = fd.get("product_id");
+//     const product = products.find(p => p.id == productId); // récupère le bon produit
+//     if (!product) {
+//       toast("❌ Produit introuvable", true, "orderFormMsg");
+//       return;
+//     }
+
+//     const payload = {
+//       customer_id: fd.get("customer_id"),
+//       status: fd.get("status"),
+//       items: [
+//         {
+//           product_id: product.id,
+//           quantity: Number(fd.get("quantity")),
+//           unit_price: Number(product.price) // 👈 ICI le prix correct
+//         }
+//       ]
+//     };
+
+//     try {
+//       await createOrder(payload);
+//       form.reset();
+//       renderList(await fetchOrders());
+//       toast("✅ Commande ajoutée avec succès", false, "orderFormMsg");
+//     } catch (e) {
+//       toast("❌ " + e.message, true, "orderFormMsg");
+//     }
+//   });
+
+//   refreshBtn?.addEventListener("click", async () => {
+//     try {
+//       renderList(await fetchOrders());
+//       toast("Liste Commandes rafraîchie", false, "orderFormMsg");
+//     } catch (e) {
+//       console.error(e);
+//       toast("x Echec rafraîchissement", true, "orderFormMsg");
+//     }
+//   });
+
+//   listEl?.addEventListener("click", async (e) => {
+//     const btn = e.target.closest("button[data-action]");
+//     if (!btn) return;
+//     const id = btn.dataset.id;
+//     if (!id) return;
+
+//     if (btn.dataset.action === "edit") {
+//       const li = btn.closest("li");
+//       const order = orderCache.get(String(id));
+//       if (!li || !order) return;
+//       enterEditMode(li, order);
+//     }
+
+//     if (btn.dataset.action === "delete") {
+//       if (!confirm("Supprimer cette commande ?")) return;
+//       try {
+//         await deleteOrder(id);
+//         renderList(await fetchOrders());
+//         toast("🗑️ Supprimé", false, "orderFormMsg");
+//       } catch (err) {
+//         toast("❌ " + (err?.message || "Erreur suppression"), true, "orderFormMsg");
+//       }
+//     }
+//   });
+
+//   const themeToggle = document.getElementById("themeToggle");
+//   themeToggle?.addEventListener("click", () => {
+//     const root = document.body;
+//     const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+//     root.setAttribute("data-theme", newTheme);
+//     localStorage.setItem("theme", newTheme);
+//   });
+// }
 
 export async function initOrders() {
   const form = document.getElementById("OrderForm");
@@ -316,41 +478,91 @@ export async function initOrders() {
   const currentTheme = localStorage.getItem("theme") || "light";
   document.body.setAttribute("data-theme", currentTheme);
 
+  // --- Fetch et affichage initial des commandes ---
+  try {
+    renderList(await fetchOrders());
+  } catch (e) {
+    console.error(e);
+    toast("❌ Erreur au chargement des commandes.", true, "orderFormMsg");
+  }
 
-  try { renderList(await fetchOrders()); } 
-  catch (e) { console.error(e); toast("x Erreur au chargement des commandes.", true, "orderFormMsg"); }
+  // --- Populate selects ---
+  await populateProductSelect();
+  await populateCustomerSelect();
 
+  // --- Init recherche ---
   initSearch("#orderSearchInput", orderCache, renderList);
 
-  form.addEventListener("submit", async (ev) => {
+  // --- CALCUL TOTAL AU CHANGEMENT ---
+  const productSelect = document.getElementById("product_id");
+  const quantityInput = document.getElementById("quantity");
+  const totalInput = document.getElementById("total");
+
+  async function updateTotal() {
+    if (!productSelect || !quantityInput || !totalInput) return;
+    const productId = productSelect.value;
+    const quantity = parseInt(quantityInput.value) || 1;
+    if (!productId) {
+      totalInput.value = 0;
+      return;
+    }
+    const product = products.find(p => p.id == productId);
+    totalInput.value = product ? (product.price * quantity).toFixed(2) : 0;
+  }
+
+  productSelect?.addEventListener("change", updateTotal);
+  quantityInput?.addEventListener("input", updateTotal);
+
+  // --- AJOUT COMMANDE ---
+  form?.addEventListener("submit", async (ev) => {
     ev.preventDefault();
+    if (!form) return;
+
     const fd = new FormData(form);
+    const productId = fd.get("product_id");
+    const product = products.find(p => p.id == productId);
+
+    if (!product) {
+      toast("❌ Produit introuvable", true, "orderFormMsg");
+      return;
+    }
+
     const payload = {
-      customer_id: (fd.get("customer_id") || "").toString().trim(),
-      status: (fd.get("status") || "").toString().trim(),
-      total: (fd.get("total") || "").toString().trim(),
+      customer_id: fd.get("customer_id"),
+      status: fd.get("status"),
+      items: [
+        {
+          product_id: product.id,
+          quantity: Number(fd.get("quantity")),
+          unit_price: Number(product.price)
+        }
+      ]
     };
+
     try {
       await createOrder(payload);
       form.reset();
+      totalInput.value = 0;
       renderList(await fetchOrders());
-      toast("✅ Commande ajoutée", false, "orderFormMsg");
+      toast("✅ Commande ajoutée avec succès", false, "orderFormMsg");
     } catch (e) {
-      toast("❌ " + e.message, true, "orderFormMsg");
+      toast("❌ " + (e?.message || "Erreur création commande"), true, "orderFormMsg");
     }
   });
 
-  refreshBtn.addEventListener("click", async () => {
+  // --- Refresh commandes ---
+  refreshBtn?.addEventListener("click", async () => {
     try {
       renderList(await fetchOrders());
-      toast("Liste Commandes rafraîchie", false, "orderFormMsg");
+      toast("✅ Liste Commandes rafraîchie", false, "orderFormMsg");
     } catch (e) {
       console.error(e);
-      toast("x Echec rafraîchissement", true, "orderFormMsg");
+      toast("❌ Echec rafraîchissement", true, "orderFormMsg");
     }
   });
 
-  listEl.addEventListener("click", async (e) => {
+  // --- Gestion Edit / Delete ---
+  listEl?.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
     const id = btn.dataset.id;
@@ -375,16 +587,16 @@ export async function initOrders() {
     }
   });
 
+  // --- Toggle thème ---
   const themeToggle = document.getElementById("themeToggle");
-  if (themeToggle) {
-    themeToggle.addEventListener("click", () => {
-      const root = document.body;
-      const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
-      root.setAttribute("data-theme", newTheme);
-      localStorage.setItem("theme", newTheme);
-    });
-  }
-
+  themeToggle?.addEventListener("click", () => {
+    const root = document.body;
+    const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+    root.setAttribute("data-theme", newTheme);
+    localStorage.setItem("theme", newTheme);
+  });
 }
 
+
+// --------- DOM READY ----------
 document.addEventListener("DOMContentLoaded", initOrders);
