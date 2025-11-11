@@ -3,100 +3,118 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Stats</title>
+     <meta name="description" content="Tableau de bord pour suivre les statistiques de votre boutique en ligne. Commandes, ventes et clients.">
+    <title>Eshop Dashboard</title>
     <link rel="stylesheet" href="../css/style.css" />
   </head>
     <body data-page="stats">
         <div class="min-h-screen bg-gray-50 p-4 md:p-8">
             <div class="mx-auto max-w-7xl space-y-6">
 
-                <nav class="dashboard-nav">
-                    <a href="./stats.html" class="active"><span>🏠</span>Overview</a>
-                    <a href="./orders.html"><span>🛒</span>Orders</a>
-                    <a href="./products.html"><span>📦</span>Products</a>
-                    <a href="./customers.html"><span>👤</span>Customers</a>
-                    <a href="./category.html"><span>📂</span>Categories</a>
-                </nav>
+                <header>
 
-                <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
-                    <span class="toggle__label">Light</span>
-                    <span class="toggle__track"><span class="toggle__thumb"></span></span>
-                    <span class="toggle__label">Dark</span>
-                </button>
+                    <nav class="dashboard-nav" role="navigation">
+                        <a href="./stats.html" class="active"><span>🏠</span class="sr-only">Overview</a>
+                        <a href="./orders.html"><span>🛒</span class="sr-only">Orders</a>
+                        <a href="./products.html"><span>📦</span class="sr-only">Products</a>
+                        <a href="./customers.html"><span>👤</span class="sr-only">Customers</a>
+                        <a href="./category.html"><span>📂</span class="sr-only">Categories</a>
+                    </nav>
 
-                <div class="flex items-center justify-between">
-                    <div>
-                    <h1 class="text-gray-900 text-2xl fw-700">Eshop Dashboard</h1>
-                    <p class="text-gray-600">Manage your inventory and orders</p>
-                    </div>
-                </div>
+                    <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
+                        <span class="toggle__label">Light</span>
+                        <span class="toggle__track"><span class="toggle__thumb"></span></span>
+                        <span class="toggle__label">Dark</span>
+                    </button>
 
-                <div class="dashboard-metrics-group">
-                    <div class="dashboard-card">
-                    <div class="text-muted">Total Revenue</div>
-                    <div class="text-2xl" id="revenue">$0.00</div>
-                    <div class="text-sm opacity-70" id="revenueLabel"></div>
-                    </div>
-                    <div class="dashboard-card">
-                    <div class="text-muted">Total Orders</div>
-                    <div class="text-2xl" id="orders">0</div>
-                    <div class="text-sm opacity-70" id="ordersLabel"></div>
-                    </div>
-                    <div class="dashboard-card">
-                    <div class="text-muted">Customers</div>
-                    <div class="text-2xl" id="customers">0</div>
-                    <div class="text-sm opacity-70" id="customersLabel"></div>
-                    </div>
-                    <div class="dashboard-card">
-                    <div class="text-muted">Products</div>
-                    <div class="text-2xl" id="products">0</div>
-                    <div class="text-sm opacity-70" id="productsLabel"></div>
-                    </div>
-                </div>
+                </header>
 
-                <div class="dashboard-charts-group">
+                <main class="container grid gap-6">
 
-                    <div class="dashboard-card">
-                        <h3 class="fw-600 mb-2">Daily Revenue</h3>
-                        <div class="chart-wrapper">
-                            <canvas id="dailyRevenueChart" height="220"></canvas>
+                    <div class="flex items-center justify-between">
+                        <div>
+                        <h1 class="text-gray-900 text-2xl fw-700">Eshop Dashboard</h1>
+                        <p class="text-gray-600">Manage your inventory and orders</p>
                         </div>
                     </div>
+
+                    <div class="dashboard-metrics-group">
+
+                        <div class="dashboard-card">
+                            <div class="text-muted">Total Revenue</div>
+                            <div class="text-2xl" id="revenue">$0.00</div>
+                            <div class="text-sm opacity-70" id="revenueLabel"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="text-muted">Total Orders</div>
+                            <div class="text-2xl" id="orders">0</div>
+                            <div class="text-sm opacity-70" id="ordersLabel"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="text-muted">Customers</div>
+                            <div class="text-2xl" id="customers">0</div>
+                            <div class="text-sm opacity-70" id="customersLabel"></div>
+                        </div>
+
+                        <div class="dashboard-card">
+                            <div class="text-muted">Products</div>
+                            <div class="text-2xl" id="products">0</div>
+                            <div class="text-sm opacity-70" id="productsLabel"></div>
+                        </div>
+
+                    </div>
+
+                    <div class="dashboard-charts-group">
+
+                        <div class="dashboard-card">
+                            <h3 class="fw-600 mb-2">Daily Revenue</h3>
+                            <div class="chart-wrapper">
+                                <canvas id="dailyRevenueChart" height="220"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="dashboard-card">
+                            <h3 class="fw-600 mb-2">Order Status Distribution</h3>
+                            <div class="doughnut-wrapper">
+                                <canvas id="orderStatusChart" height="220"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-card">
+
+                            <h3 class="fw-600 mb-2">Top-Selling Products</h3>
+                            <div class="top-wrapper">
+                                <canvas id="topProductsChart" height="220"></canvas>
+                            </div>
+
+                        </div>
                     
-                    <div class="dashboard-card">
-                        <h3 class="fw-600 mb-2">Order Status Distribution</h3>
-                        <div class="doughnut-wrapper">
-                            <canvas id="orderStatusChart" height="220"></canvas>
-                        </div>
                     </div>
 
-                    <div class="dashboard-card">
-                        <h3 class="fw-600 mb-2">Top-Selling Products</h3>
-                        <div class="top-wrapper">
-                            <canvas id="topProductsChart" height="220"></canvas>
+                    <!-- PARTIE BARRE DE RECHERCHE -->
+                    <section class="container grid gap-6">
+
+                        <form id="ResearchForm" method="post" class="form grid gap-3">
+                        <div class="grid gap-2">
+                            <label for="research-bdd" class="label">Recherche en BDD</label>
+                            <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
                         </div>
-                    </div>
-                   
-                </div>
-                          <!-- PARTIE BARRE DE RECHERCHE -->
-          <section class="container grid gap-6">
-            <form id="ResearchForm" method="post" class="form grid gap-3">
-              <div class="grid gap-2">
-                <label for="research-bdd" class="label">Recherche en BDD</label>
-                <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
-              </div>
-            </form>
-          </section>
-          
-          <!-- PARTIE RESULTAT DE RECHERCHE -->
-          <section id="global-search-results" class="container grid gap-6">
-              <ul id="list" class="list">
-                  </ul>
-          </section>
+                        </form>
+
+                    </section>
+                
+                    <!-- PARTIE RESULTAT DE RECHERCHE -->
+                    <section id="global-search-results" class="container grid gap-6">
+                        <ul id="list" class="list"></ul>
+                    </section>
+
+                </main>
             </div>
         </div>
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="../assets/script-stats.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script type="module" src="../assets/script-stats.js"></script>
     </body>
 </html>

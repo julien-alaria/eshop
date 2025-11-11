@@ -50,13 +50,12 @@ export async function fetchOrders() {
   return rows;
 }
 
-//Crée une nouvelle commande.
 async function createOrder(payload) {
-  // Conversion des types pour correspondre à la table SQLite
   const body = new URLSearchParams({
-    customer_id: Number(payload.customer_id) || 0, // INTEGER
-    status: (payload.status || "pending").toString(), // TEXT
-    total: Number(payload.total) || 0, // REAL
+    product_id: Number(payload.product_id) || 0,
+    customer_id: Number(payload.customer_id) || 0,
+    status: (payload.status || "pending").toString(),
+    total: Number(payload.total) || 0,
   });
 
   const res = await fetch(ROUTES.create, {
@@ -78,6 +77,7 @@ async function createOrder(payload) {
   }
   return res.json();
 }
+
 
 //Modifie une commande existante.
 async function editOrder(id, payload) {
@@ -388,3 +388,5 @@ export async function initOrders() {
 }
 
 document.addEventListener("DOMContentLoaded", initOrders);
+
+

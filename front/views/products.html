@@ -3,43 +3,35 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Produits — Front</title>
+  <meta name="description" content="Ajoutez et gérez vos produits en ligne. Recherchez, modifiez et suivez les stocks et prix de vos produits.">
+
+  <title>Gestion des Produits - Eshop Dashboard</title>
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body data-page="products">
   <div class="min-h-screen bg-gray-50 p-4 md:p-8">
     <div class="mx-auto max-w-7xl space-y-6">
 
-      <nav class="dashboard-nav">
-        <a href="./stats.html"><span>🏠</span>Overview</a>
-        <a href="./orders.html"><span>🛒</span>Orders</a>
-        <a href="./products.html" class="active"><span>📦</span>Products</a>
-        <a href="./customers.html"><span>👤</span>Customers</a>
-        <a href="./category.html"><span>📂</span>Categories</a>
-      </nav>
+      <header>
 
-      <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
-        <span class="toggle__label">Light</span>
-        <span class="toggle__track"><span class="toggle__thumb"></span></span>
-        <span class="toggle__label">Dark</span>
-      </button>
+        <nav class="dashboard-nav" role="navigation">
+            <a href="./stats.html"><span>🏠</span class="sr-only">Overview</a>
+            <a href="./orders.html"><span>🛒</span class="sr-only">Orders</a>
+            <a href="./products.html" class="active"><span>📦</span class="sr-only">Products</a>
+            <a href="./customers.html"><span>👤</span class="sr-only">Customers</a>
+            <a href="./category.html"><span>📂</span class="sr-only">Categories</a>
+        </nav>
+
+        <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
+            <span class="toggle__label">Light</span>
+            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+            <span class="toggle__label">Dark</span>
+        </button>
+
+      </header>
 
       <main class="container grid gap-6">
-
-        <!-- PARTIE BARRE DE RECHERCHE -->
-        <!-- <section class="container grid gap-6">
-          <form id="ResearchForm" method="post" class="form grid gap-3">
-            <div class="grid gap-2">
-              <label for="research-bdd" class="label">Recherche en BDD</label>
-              <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
-            </div>
-          </form>
-        </section> -->
-
-        <!-- PARTIE RESULTAT DE RECHERCHE -->
-        <!-- <section id="global-search-results" class="container grid gap-6">
-          <ul id="list" class="list"></ul>
-        </section> -->
+        <h1 class="text-2xl fw-700 mb-4">Gestion des Produits</h1>
 
         <section class="card">
           <h2 class="text-lg fw-600 mb-2">Recherche Client</h2>
