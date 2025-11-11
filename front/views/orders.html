@@ -22,7 +22,7 @@
                 </button>
 
                       <main class="container grid gap-6">
-      <section class="container grid gap-6">
+      <!-- <section class="container grid gap-6">
         <form id="ResearchForm" method="post" class="form grid gap-3">
           <div class="grid gap-2">
             <label for="research-bdd" class="label">Recherche en BDD</label>
@@ -34,7 +34,14 @@
       <section id="global-search-results" class="container grid gap-6">
           <ul id="list" class="list">
               </ul>
-      </section>
+      </section> -->
+
+        <section class="card">
+          <h2 class="text-lg fw-600 mb-2">Recherche Client</h2>
+          <form id="orderSearchForm" class="form grid gap-2" onsubmit="return false;">
+            <input type="text" id="orderSearchInput" class="input" placeholder="Rechercher une commande...">
+          </form>
+        </section>
 
       <section class="card">
         <h2 class="text-lg fw-600 mb-2">Ajouter une Commande</h2>

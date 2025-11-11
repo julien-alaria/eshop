@@ -1,4 +1,4 @@
-import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
+import { API_BASE, toast } from "./scripts-base.js";
 
 const ROUTES = {
   index: `${API_BASE}/?route=orders.list`,
@@ -19,8 +19,6 @@ const ordersPerPage = 3;
 let paginatedOrders = [];
 
 // --------- UTILITAIRES ----------
-
-//Crée un input avec label
 
 function createInput(labelText, name, type = "text", value = "", step) {
   const label = document.createElement("label");
@@ -125,6 +123,26 @@ export async function deleteOrder(id) {
 }
 
 // --------- RENDU ----------
+
+function initSearch(inputSelector, cache, renderFn) {
+  const input = document.querySelector(inputSelector);
+  if (!input) return;
+
+  input.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const allOrders = Array.from(cache.values());
+
+    const filtered = allOrders.filter(order =>
+      String(order.id).toLowerCase().includes(query) ||
+      String(order.customer_id).toLowerCase().includes(query) ||
+      (order.status || "").toLowerCase().includes(query) ||
+      String(order.total ?? "").toLowerCase().includes(query)
+    );
+
+    orderPage = 1; // reset pagination
+    renderFn(filtered);
+  });
+}
 
 export function renderList(items) {
   const ul = document.getElementById("order-list");
@@ -294,12 +312,15 @@ export function enterEditMode(li, order) {
 export async function initOrders() {
   const form = document.getElementById("OrderForm");
   const refreshBtn = document.getElementById("refreshOrderBtn");
-  const themeToggle = document.getElementById("themeToggle");
   const listEl = document.getElementById("order-list");
-  const searchBddInput = document.getElementById("research-bdd");
+  const currentTheme = localStorage.getItem("theme") || "light";
+  document.body.setAttribute("data-theme", currentTheme);
+
 
   try { renderList(await fetchOrders()); } 
   catch (e) { console.error(e); toast("x Erreur au chargement des commandes.", true, "orderFormMsg"); }
+
+  initSearch("#orderSearchInput", orderCache, renderList);
 
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
@@ -354,24 +375,16 @@ export async function initOrders() {
     }
   });
 
-  themeToggle.addEventListener("click", () => {
-    const root = document.body;
-    root.setAttribute("data-theme", root.getAttribute("data-theme") === "light" ? "dark" : "light");
-  });
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const root = document.body;
+      const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    });
+  }
 
-  searchBddInput.addEventListener("input", async (e) => {
-    const query = e.target.value.toLowerCase();
-    try {
-      if (query.length > 0) {
-        renderGlobalResults(await globalSearch(query));
-      } else {
-        renderList(await fetchOrders());
-      }
-    } catch (e) {
-      console.error(e);
-      toast("x " + (e.message || "Erreur de recherche"), true);
-    }
-  });
 }
 
 document.addEventListener("DOMContentLoaded", initOrders);

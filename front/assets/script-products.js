@@ -1,4 +1,4 @@
-import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
+import { API_BASE, toast } from "./scripts-base.js";
 
 const PRODUCTS = {
   indexProduct: `${API_BASE}/?route=product.index`,
@@ -14,9 +14,8 @@ const categoryCache = new Map();
 
 //VARIABLES DE PAGINATION
 let currentPage = 1;
-const itemsPerPage = 5; // nombre de produits par page
-let paginatedProducts = []; // produits actuellement paginés
-
+const itemsPerPage = 5;
+let paginatedProducts = [];
 
 // ---------- API ----------
 
@@ -61,7 +60,6 @@ async function fetchCategories() {
     return [];
   }
 }
-
 
 async function createProduct(payload) {
   const body = new URLSearchParams({
@@ -125,6 +123,37 @@ async function deleteProduct(id) {
 }
 
 // ---------- UI ----------
+
+function initSearch(inputSelector, cache, renderFn) {
+  const input = document.querySelector(inputSelector);
+  if (!input) return;
+
+  input.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    if (!query) {
+      renderFn(Array.from(cache.values())); // si vide → tout afficher
+      return;
+    }
+
+    const allItems = Array.from(cache.values());
+    const filtered = allItems.filter(product => {
+      const sku = (product.sku || "").toLowerCase();
+      const title = (product.title || "").toLowerCase();
+      // const stock = String(product.stock || "").toLowerCase();
+      const price = String(product.price || "").toLowerCase();
+
+      return (
+        sku.includes(query) ||
+        title.includes(query) ||
+        // stock.includes(query) ||
+        price.includes(query)
+      );
+    });
+
+    currentPage = 1; // réinitialise la pagination
+    renderFn(filtered);
+  });
+}
 
 function populateCategorySelect(selectEl) {
   selectEl.innerHTML = "";
@@ -231,7 +260,6 @@ function renderItem(product) {
   return li;
 }
 
-// Inline editing
 function enterEditMode(li, product) {
   li.innerHTML = "";
   const form = document.createElement("form");
@@ -317,8 +345,8 @@ export async function initProducts() {
   const refreshBtn = document.getElementById("refreshProductBtn");
   const listEl = document.getElementById("product-list");
   const categorySelect = document.getElementById("product-category-select");
-  const searchBddInput = document.getElementById("research-bdd");
-  const themeToggle = document.getElementById("theme-toggle");
+  const currentTheme = localStorage.getItem("theme") || "light";
+  document.body.setAttribute("data-theme", currentTheme);("theme") || "light";
 
   async function loadInitialData() {
     await fetchCategories();
@@ -335,7 +363,9 @@ export async function initProducts() {
     toast("❌ Erreur chargement Produits/Catégories", true);
   }
 
-  // ---------- Add Product ----------
+  initSearch("#productSearchInput", productCache, renderList);
+
+  // Création
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const fd = new FormData(form);
@@ -355,7 +385,7 @@ export async function initProducts() {
     }
   });
 
-  // ---------- Refresh Products ----------
+  // Rafraichir
   refreshBtn.addEventListener("click", async () => {
     try {
       await loadInitialData();
@@ -366,7 +396,7 @@ export async function initProducts() {
     }
   });
 
-  // ---------- Delegation: Edit / Delete ----------
+  // Edition / Suppression
   listEl.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
@@ -393,31 +423,16 @@ export async function initProducts() {
   });
 
   // ---------- Theme Toggle ----------
-  themeToggle?.addEventListener("click", () => {
-    const root = document.body;
-    root.setAttribute("data-theme", root.getAttribute("data-theme") === "light" ? "dark" : "light");
-  });
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const root = document.body;
+      const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    });
+  }
 
-  // ---------- Search Input (Debounced) ----------
-  let searchTimeout;
-  searchBddInput.addEventListener("input", (e) => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(async () => {
-      const query = e.target.value.toLowerCase();
-      try {
-        if (query.length > 0) {
-          renderGlobalResults(await globalSearch(query));
-        } else {
-          const products = await fetchProducts();
-          currentPage = 1;
-          renderList(products, currentPage);
-        }
-      } catch (err) {
-        console.error(err);
-        toast("❌ " + (err.message || "Erreur de recherche"), true);
-      }
-    }, 300); // 300ms debounce
-  });
 }
 
 document.addEventListener("DOMContentLoaded", initProducts);

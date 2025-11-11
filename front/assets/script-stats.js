@@ -1,11 +1,4 @@
-import { API_BASE, toast } from "./scripts-base.js"; 
-
-// const OVERVIEW_ROUTES = { 
-//   kpis: `${API_BASE}/?route=stats.kpis`, 
-//   daily_revenue: `${API_BASE}/?route=stats.revenue`, 
-//   order_status: `${API_BASE}/?route=stats.kpis`,
-//   top_products: `${API_BASE}/?route=stats.kpis`,
-// };
+import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
 
 const OVERVIEW_ROUTES = { 
   kpis: `${API_BASE}/?route=stats.kpis`, 
@@ -13,7 +6,6 @@ const OVERVIEW_ROUTES = {
   order_status: `${API_BASE}/?route=stats.order_status`,
   top_products: `${API_BASE}/?route=stats.top_products`,
 };
-
 
 async function renderKpis() {
   const res = await fetch(OVERVIEW_ROUTES.kpis);
@@ -42,7 +34,7 @@ async function renderDailyRevenueChart() {
       labels: labels,
       datasets: [{
         label: 'Revenue ($)',
-        data: values.map(v => parseFloat(v) || 0), // assure que ce sont bien des nombres
+        data: values.map(v => parseFloat(v) || 0), 
         borderColor: '#1d3557',
         backgroundColor: 'rgba(34,197,94,0.10)',
         fill: false,
@@ -56,7 +48,6 @@ async function renderDailyRevenueChart() {
 }
 
 async function renderOrderStatusChart() {
-  // On utilise stats.kpis qui contient déjà les statuts
   const res = await fetch(OVERVIEW_ROUTES.kpis);
   if (!res.ok) throw new Error("Échec du chargement du statut des commandes.");
   
@@ -82,29 +73,6 @@ async function renderOrderStatusChart() {
   });
 }
 
-// async function renderTopProductsChart() {
-//   const res = await fetch(OVERVIEW_ROUTES.top_products);
-//   if (!res.ok) throw new Error("Échec du chargement des meilleurs produits.");
-//   const data = await res.json();
-
-//   const top_products = data.topProduct ?? [];
-//   const labels = top_products.map(x => x.title);
-//   const values = top_products.map(x => x.total_sold);
-
-//   new Chart(document.getElementById('topProductsChart').getContext('2d'), {
-//     type: 'bar',
-//     data: {
-//       labels: labels,
-//       datasets: [{
-//         label: 'Units Sold',
-//         data: values,
-//         backgroundColor: '#1d3557'
-//       }]
-//     },
-//     options: { plugins: { legend: { display: false } } }
-//   });
-// }
-
 async function renderTopProductsChart() {
   const res = await fetch(OVERVIEW_ROUTES.top_products);
   if (!res.ok) throw new Error("Échec du chargement des meilleurs produits.");
@@ -128,10 +96,35 @@ async function renderTopProductsChart() {
   });
 }
 
-
 // --------- BOOT ----------
 
 export async function initStats() {
+   // --- Appliquer le thème enregistré ou par défaut ---
+  const currentTheme = localStorage.getItem("theme") || "light";
+  document.body.setAttribute("data-theme", currentTheme);
+  
+  // --- Recherche globale ---
+  const searchBddInput = document.getElementById("research-bdd");
+
+  if (searchBddInput) {
+    searchBddInput.addEventListener("input", async (e) => {
+      const query = e.target.value.trim();
+
+      if (!query) {
+        document.getElementById("list").innerHTML = "";
+        return;
+      }
+
+      try {
+        const results = await globalSearch(query);
+        renderGlobalResults(results);
+      } catch (err) {
+        console.error(err);
+        toast("❌ Erreur lors de la recherche globale", true);
+      }
+    });
+  }
+
   try {
     await Promise.all([
       renderKpis(),
@@ -143,13 +136,14 @@ export async function initStats() {
     console.error("Erreur lors du chargement de l'aperçu:", e);
     toast("❌ Erreur au chargement de l'Aperçu", true);
   }
-
+  
   const themeToggle = document.getElementById("themeToggle");
   if (themeToggle) {
     themeToggle.addEventListener("click", () => {
       const root = document.body;
-      const current = root.getAttribute("data-theme") || "light";
-      root.setAttribute("data-theme", current === "light" ? "dark" : "light");
+      const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
     });
   }
 }

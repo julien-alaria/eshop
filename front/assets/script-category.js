@@ -1,4 +1,4 @@
-import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
+import { API_BASE, toast} from "./scripts-base.js";
 
 const CATEGORIES = {
   index: `${API_BASE}/?route=category.index`,
@@ -53,7 +53,6 @@ async function fetchCategories() {
 }
 
 async function createCategory(payload) {
-  // Le controller lit $_POST['title'] et $_POST['content'] -> form-urlencoded
   const body = new URLSearchParams({
     name: (payload.name ?? "").toString().trim(),
   });
@@ -119,6 +118,23 @@ async function deleteCategory(id) {
   return res.json(); 
 }
 
+function initSearch(inputSelector, cache, renderFn) {
+  const input = document.querySelector(inputSelector);
+  if (!input) return;
+
+  input.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase();
+
+    const allItems = Array.from(cache.values());
+    const filtered = allItems.filter(item =>
+      (item.name || "").toLowerCase().includes(query)
+    );
+
+    currentPage = 1; // reset pagination
+    renderFn(filtered);
+  });
+}
+
 function renderList(items) {
   const ul = document.getElementById("category-list");
   ul.innerHTML = "";
@@ -173,55 +189,11 @@ function renderPagination(totalItems, current) {
   }
 }
 
-// function renderItem(category) {
-//   const li = document.createElement("li");
-//   li.className = "list__item";
-//   li.dataset.id = String(category.id);
-
-//   const title = document.createElement("strong");
-//   title.textContent = category.name || "(Sans titre)";
-
-//   const content = document.createElement("p");
-//   content.className = "content-class";
-//   content.textContent = category.id || "";
-
-//   const small = document.createElement("small");
-//   small.className = "muted";
-//   const dt = category.created_at ? new Date(category.created_at) : null;
-//   small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
-
-//   // Actions: Éditer / Supprimer
-//   const actions = document.createElement("div");
-//   actions.style.display = "flex";
-//   actions.style.gap = ".5rem";
-//   actions.style.marginTop = ".25rem";
-
-//   const editBtn = document.createElement("button");
-//   editBtn.type = "button";
-//   editBtn.className = "btn btn-ghost";
-//   editBtn.textContent = "Éditer";
-//   editBtn.dataset.action = "edit";
-//   editBtn.dataset.id = String(category.id);
-
-//   const delBtn = document.createElement("button");
-//   delBtn.type = "button";
-//   delBtn.className = "btn btn-ghost";
-//   delBtn.textContent = "Supprimer";
-//   delBtn.dataset.action = "delete";
-//   delBtn.dataset.id = String(category.id);
-
-//   actions.append(editBtn, delBtn);
-
-//   li.append(title, content, small, actions);
-//   return li;
-// }
-
 function renderItem(category) {
   const li = document.createElement("li");
   li.className = "list__item";
   li.dataset.id = String(category.id);
 
-  // Conteneur pour ID + Nom
   const infoDiv = document.createElement("div");
   infoDiv.style.display = "flex";
   infoDiv.style.alignItems = "center";
@@ -240,7 +212,7 @@ function renderItem(category) {
   const actions = document.createElement("div");
   actions.style.display = "flex";
   actions.style.gap = ".5rem";
-  actions.style.marginLeft = "auto"; // pousse à droite
+  actions.style.marginLeft = "auto"; 
 
   const editBtn = document.createElement("button");
   editBtn.type = "button";
@@ -325,8 +297,9 @@ function enterEditMode(li, category) {
 export async function initCategories() {
   const form = document.getElementById("CategoryForm");
   const refreshBtn = document.getElementById("refreshBtn");
-  const themeToggle = document.getElementById("themeToggle");
   const listEl = document.getElementById("category-list");
+  const currentTheme = localStorage.getItem("theme") || "light";
+  document.body.setAttribute("data-theme", currentTheme);
 
   try {
     renderList(await fetchCategories());
@@ -335,6 +308,8 @@ export async function initCategories() {
     toast("x Erreur au chargement des categories", true, "categoryFormMsg");
   }
 
+  initSearch("#categorySearchInput", categoryCache, renderList);
+  
   // Création
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
@@ -389,31 +364,16 @@ export async function initCategories() {
     }
   });
 
-  // Toggle light/dark + animation
-  themeToggle.addEventListener("click", () => {
-    const root = document.body;
-    const current = root.getAttribute("data-theme") || "light";
-    root.setAttribute("data-theme", current === "light" ? "dark" : "light");
-  });
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const root = document.body;
+      const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    });
+  }
 
-  const searchBddInput = document.getElementById("research-bdd");
-  searchBddInput.addEventListener("input", async function (e) {
-    const query = e.target.value.toLowerCase();
-    console.log(query);
-
-    try {
-      if (query.length > 0) {
-        const globalResults = await globalSearch(query);
-
-        renderGlobalResults(globalResults);
-      } else {
-        renderList(await fetchCategories());
-      }
-    } catch (e) {
-      console.error(e);
-      toast("x " + (e.message || "Erreur de recherche"), true);
-    }
-  });
 }
 
 document.addEventListener("DOMContentLoaded", initCategories);

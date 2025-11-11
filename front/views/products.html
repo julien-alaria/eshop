@@ -27,18 +27,25 @@
       <main class="container grid gap-6">
 
         <!-- PARTIE BARRE DE RECHERCHE -->
-        <section class="container grid gap-6">
+        <!-- <section class="container grid gap-6">
           <form id="ResearchForm" method="post" class="form grid gap-3">
             <div class="grid gap-2">
               <label for="research-bdd" class="label">Recherche en BDD</label>
               <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
             </div>
           </form>
-        </section>
+        </section> -->
 
         <!-- PARTIE RESULTAT DE RECHERCHE -->
-        <section id="global-search-results" class="container grid gap-6">
+        <!-- <section id="global-search-results" class="container grid gap-6">
           <ul id="list" class="list"></ul>
+        </section> -->
+
+        <section class="card">
+          <h2 class="text-lg fw-600 mb-2">Recherche Client</h2>
+          <form id="productSearchForm" class="form grid gap-2" onsubmit="return false;">
+            <input type="text" id="productSearchInput" class="input" placeholder="Rechercher un produit...">
+          </form>
         </section>
 
         <!-- PARTIE PRODUCTS -->
