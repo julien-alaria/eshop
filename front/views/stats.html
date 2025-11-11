@@ -30,7 +30,7 @@
                     <p class="text-gray-600">Manage your inventory and orders</p>
                     </div>
                 </div>
-                    
+
                 <div class="dashboard-metrics-group">
                     <div class="dashboard-card">
                     <div class="text-muted">Total Revenue</div>
@@ -78,6 +78,21 @@
                     </div>
                    
                 </div>
+                          <!-- PARTIE BARRE DE RECHERCHE -->
+          <section class="container grid gap-6">
+            <form id="ResearchForm" method="post" class="form grid gap-3">
+              <div class="grid gap-2">
+                <label for="research-bdd" class="label">Recherche en BDD</label>
+                <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
+              </div>
+            </form>
+          </section>
+          
+          <!-- PARTIE RESULTAT DE RECHERCHE -->
+          <section id="global-search-results" class="container grid gap-6">
+              <ul id="list" class="list">
+                  </ul>
+          </section>
             </div>
         </div>
     </div>

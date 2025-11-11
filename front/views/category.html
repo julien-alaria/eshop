@@ -24,46 +24,54 @@
                     <span class="toggle__label">Dark</span>
                 </button>
 
-                      <main class="container grid gap-6">
-      <!-- PARTIE BARRE DE RECHERCHE -->
-      <section class="container grid gap-6">
-        <form id="ResearchForm" method="post" class="form grid gap-3">
-          <div class="grid gap-2">
-            <label for="research-bdd" class="label">Recherche en BDD</label>
-            <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
+      <main class="container grid gap-6">
+          <!-- PARTIE BARRE DE RECHERCHE -->
+          <!-- <section class="container grid gap-6">
+            <form id="ResearchForm" method="post" class="form grid gap-3">
+              <div class="grid gap-2">
+                <label for="research-bdd" class="label">Recherche en BDD</label>
+                <input type="text" id="research-bdd" name="research-bdd" class="input" placeholder="Votre Recherche">
+              </div>
+            </form>
+          </section> -->
+          
+          <!-- PARTIE RESULTAT DE RECHERCHE -->
+          <!-- <section id="global-search-results" class="container grid gap-6">
+              <ul id="list" class="list">
+                  </ul>
+          </section> -->
+        <section class="card">
+          <h2 class="text-lg fw-600 mb-2">Recherche Catégorie</h2>
+          <form id="CategorySearchForm" class="form grid gap-2" onsubmit="return false;">
+            <input type="text" id="categorySearchInput" class="input" placeholder="Rechercher une catégorie...">
+          </form>
+        </section>
+
+        
+
+        <!-- PARTIE CATEGORY -->
+        <section class="card">
+          <h2 class="text-lg fw-600 mb-2">Ajouter une Catégorie</h2>
+          <form id="CategoryForm" method="post" class="form grid gap-3">
+            <div class="grid gap-2">
+              <label for="name" class="label">Nom</label>
+              <input type="text" id="name" name="name" class="input" placeholder="Catégorie" required>
+            </div>
+            <button class="btn" type="submit">Ajouter</button>
+            <p id="categoryFormMsg" class="text-sm"></p>
+          </form>
+        </section>
+
+        <section class="card">
+          <div class="flex items-center justify-between">
+            <h2 class="text-lg fw-600">Mes Catégories</h2>
+            <button id="refreshBtn" class="btn btn-ghost">Rafraîchir</button>
           </div>
-        </form>
-      </section>
-      
-      <!-- PARTIE RESULTAT DE RECHERCHE -->
-      <section id="global-search-results" class="container grid gap-6">
-          <ul id="list" class="list">
-              </ul>
-      </section>
+          <ul id="category-list" class="list mt-3"></ul>
+        </section>
 
-      <!-- PARTIE CATEGORY -->
-      <section class="card">
-        <h2 class="text-lg fw-600 mb-2">Ajouter une Catégorie</h2>
-        <form id="CategoryForm" method="post" class="form grid gap-3">
-          <div class="grid gap-2">
-            <label for="name" class="label">Nom</label>
-            <input type="text" id="name" name="name" class="input" placeholder="Catégorie" required>
-          </div>
-          <button class="btn" type="submit">Ajouter</button>
-          <p id="categoryFormMsg" class="text-sm"></p>
-        </form>
-      </section>
-
-      <section class="card">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg fw-600">Mes Catégories</h2>
-          <button id="refreshBtn" class="btn btn-ghost">Rafraîchir</button>
-        </div>
-        <ul id="category-list" class="list mt-3"></ul>
-      </section>
-
-      <div id="pagination" class="flex justify-center gap-2 mt-4"></div>
-    
+        <div id="pagination" class="flex justify-center gap-2 mt-4"></div>
+      </main>
       <footer class="container py-6 text-sm opacity-70">
       <p>
         Back: <code>php -S localhost:8000 -t public</code> (dans le dossier

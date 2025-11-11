@@ -1,4 +1,4 @@
-import { API_BASE, toast, globalSearch, renderGlobalResults } from "./scripts-base.js";
+import { API_BASE, toast } from "./scripts-base.js";
 
 const CUSTOMERS = {
   index: `${API_BASE}/?route=customer.index`,
@@ -125,6 +125,23 @@ async function deleteCustomer(id) {
 }
 
 // --------- Rendu ----------
+
+function initSearch(inputSelector, cache, renderFn) {
+  const input = document.querySelector(inputSelector);
+  if (!input) return;
+
+  input.addEventListener("input", (e) => {
+    const query = e.target.value.toLowerCase();
+
+    const allItems = Array.from(cache.values());
+    const filtered = allItems.filter(item =>
+      (item.name || "").toLowerCase().includes(query)
+    );
+
+    customerPage = 1;
+    renderFn(filtered);
+  });
+}
 
 function renderList(items, containerId = "customer-list") {
   const ul = document.getElementById(containerId);
@@ -295,9 +312,11 @@ function enterEditMode(li, customer) {
 export async function initCustomers() {
   const form = document.getElementById("CustomerForm");
   const refreshBtn = document.getElementById("refreshBtn");
-  const themeToggle = document.getElementById("themeToggle");
   const listEl = document.getElementById("customer-list");
   const searchBddInput = document.getElementById("research-bdd");
+  const searchInput = document.getElementById("customerSearchInput");
+  const currentTheme = localStorage.getItem("theme") || "light";
+  document.body.setAttribute("data-theme", currentTheme);
 
   // Chargement initial
   try {
@@ -306,6 +325,8 @@ export async function initCustomers() {
     console.error(e);
     toast("❌ Erreur au chargement des clients.", true, "customerFormMsg");
   }
+
+  initSearch("#customerSearchInput", customerCache, renderList);
 
   // Création client
   form.addEventListener("submit", async (ev) => {
@@ -368,28 +389,16 @@ export async function initCustomers() {
     }
   });
 
-  // Toggle light/dark
-  themeToggle.addEventListener("click", () => {
-    const root = document.body;
-    const current = root.getAttribute("data-theme") || "light";
-    root.setAttribute("data-theme", current === "light" ? "dark" : "light");
-  });
+  const themeToggle = document.getElementById("themeToggle");
+  if (themeToggle) {
+    themeToggle.addEventListener("click", () => {
+      const root = document.body;
+      const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
+      root.setAttribute("data-theme", newTheme);
+      localStorage.setItem("theme", newTheme);
+    });
+  }
 
-  // Recherche globale
-  searchBddInput.addEventListener("input", async (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    try {
-      if (query.length > 0) {
-        const globalResults = await globalSearch(query);
-        renderGlobalResults(globalResults);
-      } else {
-        renderList(await fetchCustomers());
-      }
-    } catch (err) {
-      console.error(err);
-      toast("❌ " + (err?.message || "Erreur de recherche"), true);
-    }
-  });
 }
 
 document.addEventListener("DOMContentLoaded", initCustomers);
