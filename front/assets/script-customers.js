@@ -10,6 +10,12 @@ const CUSTOMERS = {
 
 const customerCache = new Map();
 
+// VARIABLES DE PAGINATION
+let customerPage = 1;
+const customersPerPage = 2;
+let paginatedCustomers = [];
+
+
 // --------- API calls ----------
 
 async function fetchCustomers() {
@@ -132,8 +138,44 @@ function renderList(items, containerId = "customer-list") {
     return;
   }
 
-  for (const it of items) {
+  paginatedCustomers = items;
+
+  const start = (customerPage - 1) * customersPerPage;
+  const end = start + customersPerPage;
+  const pageItems = items.slice(start, end);
+
+  for (const it of pageItems) {
     ul.appendChild(renderItem(it));
+  }
+
+  renderPagination(items.length);
+}
+
+function renderPagination(totalItems) {
+  let pagination = document.getElementById("pagination");
+  if (!pagination) {
+    pagination = document.createElement("div");
+    pagination.id = "pagination";
+    document.getElementById("customer-list").after(pagination);
+  }
+
+  pagination.innerHTML = "";
+  const totalPages = Math.ceil(totalItems / customersPerPage);
+  if (totalPages <= 1) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = i;
+    if (i === customerPage) link.classList.add("active");
+
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      customerPage = i;
+      renderList(paginatedCustomers);
+    });
+
+    pagination.appendChild(link);
   }
 }
 

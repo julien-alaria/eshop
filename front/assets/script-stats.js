@@ -1,11 +1,19 @@
 import { API_BASE, toast } from "./scripts-base.js"; 
 
+// const OVERVIEW_ROUTES = { 
+//   kpis: `${API_BASE}/?route=stats.kpis`, 
+//   daily_revenue: `${API_BASE}/?route=stats.revenue`, 
+//   order_status: `${API_BASE}/?route=stats.kpis`,
+//   top_products: `${API_BASE}/?route=stats.kpis`,
+// };
+
 const OVERVIEW_ROUTES = { 
   kpis: `${API_BASE}/?route=stats.kpis`, 
   daily_revenue: `${API_BASE}/?route=stats.revenue`, 
-  order_status: `${API_BASE}/?route=stats.kpis`,
-  top_products: `${API_BASE}/?route=stats.kpis`,
+  order_status: `${API_BASE}/?route=stats.order_status`,
+  top_products: `${API_BASE}/?route=stats.top_products`,
 };
+
 
 async function renderKpis() {
   const res = await fetch(OVERVIEW_ROUTES.kpis);
@@ -48,9 +56,15 @@ async function renderDailyRevenueChart() {
 }
 
 async function renderOrderStatusChart() {
-  const res = await fetch(OVERVIEW_ROUTES.order_status);
+  // On utilise stats.kpis qui contient déjà les statuts
+  const res = await fetch(OVERVIEW_ROUTES.kpis);
   if (!res.ok) throw new Error("Échec du chargement du statut des commandes.");
+  
   const data = await res.json();
+
+  if (!data.statuses || !Array.isArray(data.statuses)) {
+    throw new Error("Les statuts des commandes sont introuvables dans la réponse.");
+  }
 
   const labels = data.statuses.map(s => s.status);
   const values = data.statuses.map(s => s.count);
@@ -68,14 +82,37 @@ async function renderOrderStatusChart() {
   });
 }
 
+// async function renderTopProductsChart() {
+//   const res = await fetch(OVERVIEW_ROUTES.top_products);
+//   if (!res.ok) throw new Error("Échec du chargement des meilleurs produits.");
+//   const data = await res.json();
+
+//   const top_products = data.topProduct ?? [];
+//   const labels = top_products.map(x => x.title);
+//   const values = top_products.map(x => x.total_sold);
+
+//   new Chart(document.getElementById('topProductsChart').getContext('2d'), {
+//     type: 'bar',
+//     data: {
+//       labels: labels,
+//       datasets: [{
+//         label: 'Units Sold',
+//         data: values,
+//         backgroundColor: '#1d3557'
+//       }]
+//     },
+//     options: { plugins: { legend: { display: false } } }
+//   });
+// }
+
 async function renderTopProductsChart() {
   const res = await fetch(OVERVIEW_ROUTES.top_products);
   if (!res.ok) throw new Error("Échec du chargement des meilleurs produits.");
   const data = await res.json();
 
-  const top_products = data.topProduct ?? [];
+  const top_products = data.top_products ?? [];
   const labels = top_products.map(x => x.title);
-  const values = top_products.map(x => x.total_sold);
+  const values = top_products.map(x => x.qty);
 
   new Chart(document.getElementById('topProductsChart').getContext('2d'), {
     type: 'bar',
@@ -90,6 +127,7 @@ async function renderTopProductsChart() {
     options: { plugins: { legend: { display: false } } }
   });
 }
+
 
 // --------- BOOT ----------
 

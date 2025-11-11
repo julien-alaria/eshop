@@ -8,13 +8,27 @@ require_once __DIR__ . '/../helpers/helpers.php';
 
 /** ---------- Actions ---------- */
 
+// function statsKpis(PDO $pdo): void {
+//     respond_json([
+//         "totalRevenue" => getTotalRevenue($pdo),
+//         "orderCount" => getOrderCount($pdo),
+//         "averageOrderValue" => getAverageOrderValue($pdo),
+//         "statuses" => getOrderStatuses($pdo),
+//         "topProducts" => getTopProducts($pdo, 1), // Ici on récupère juste le top 1
+//     ]);
+// }
+
 function statsKpis(PDO $pdo): void {
     respond_json([
         "totalRevenue" => getTotalRevenue($pdo),
         "orderCount" => getOrderCount($pdo),
         "averageOrderValue" => getAverageOrderValue($pdo),
         "statuses" => getOrderStatuses($pdo),
-        "topProducts" => getTopProducts($pdo, 1), // Ici on récupère juste le top 1
+        "topProducts" => getTopProducts($pdo, 1),
+        // Ajout des nouveaux KPIs
+        "totalCustomerCount" => getTotalCustomerCount($pdo),
+        "lowStockCount" => getLowStockCount($pdo),
+        "productCount" => getTotalProductCount($pdo),
     ]);
 }
 

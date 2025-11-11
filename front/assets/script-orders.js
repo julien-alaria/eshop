@@ -13,6 +13,11 @@ const ROUTES = {
 const orderCache = new Map();
 const validStatuses = ["pending", "paid", "refunded", "cancelled"];
 
+// VARIABLES POUR LA PAGINATION
+let orderPage = 1;
+const ordersPerPage = 3;
+let paginatedOrders = [];
+
 // --------- UTILITAIRES ----------
 
 //Crée un input avec label
@@ -124,6 +129,7 @@ export async function deleteOrder(id) {
 export function renderList(items) {
   const ul = document.getElementById("order-list");
   ul.innerHTML = "";
+
   if (!items.length) {
     const li = document.createElement("li");
     li.className = "list__empty";
@@ -131,7 +137,44 @@ export function renderList(items) {
     ul.appendChild(li);
     return;
   }
-  for (const order of items) ul.appendChild(renderItem(order));
+
+  paginatedOrders = items;
+
+  const start = (orderPage - 1) * ordersPerPage;
+  const end = start + ordersPerPage;
+  const pageItems = items.slice(start, end);
+
+  for (const order of pageItems) ul.appendChild(renderItem(order));
+
+  renderPagination(items.length);
+}
+
+export function renderPagination(totalItems) {
+  let pagination = document.getElementById("pagination");
+  if (!pagination) {
+    pagination = document.createElement("div");
+    pagination.id = "pagination";
+    document.getElementById("order-list").after(pagination);
+  }
+
+  pagination.innerHTML = "";
+  const totalPages = Math.ceil(totalItems / ordersPerPage);
+  if (totalPages <= 1) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const link = document.createElement("a");
+    link.href = "#";
+    link.textContent = i;
+    if (i === orderPage) link.classList.add("active");
+
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      orderPage = i;
+      renderList(paginatedOrders);
+    });
+
+    pagination.appendChild(link);
+  }
 }
 
 export function renderItem(order) {

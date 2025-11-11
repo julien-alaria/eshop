@@ -41,3 +41,20 @@ function getDailyRevenue(PDO $pdo): array {
     ")->fetchAll(PDO::FETCH_ASSOC);
 }
 
+function getTotalCustomerCount(PDO $pdo): int {
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM customers");
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+}
+
+function getLowStockCount(PDO $pdo, int $threshold = 5): int {
+    $stmt = $pdo->prepare("SELECT COUNT(*) as count FROM products WHERE stock <= :threshold");
+    $stmt->execute(['threshold' => $threshold]);
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+}
+
+function getTotalProductCount(PDO $pdo): int {
+    $stmt = $pdo->query("SELECT COUNT(*) as count FROM products");
+    return (int) $stmt->fetch(PDO::FETCH_ASSOC)['count'];
+}
+
+

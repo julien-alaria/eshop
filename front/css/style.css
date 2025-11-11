@@ -399,6 +399,37 @@ body {
   border-top: 1px dashed var(--border);
 }
 
+/* Pagination sous la liste de produits */
+#pagination {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;       /* permet de passer à la ligne sur mobile */
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+#pagination a {
+  display: inline-block;
+  padding: 0.5rem 0.9rem;
+  border-radius: 0.5rem;
+  background-color: #007BFF; /* bleu */
+  color: #fff;
+  text-decoration: none;
+  font-weight: 500;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+#pagination a:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+#pagination a.active {
+  background-color: #0056b3;
+  pointer-events: none;
+}
+
+
 /* Responsive */
 
 @media (max-width: 1050px) {

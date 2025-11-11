@@ -12,6 +12,12 @@ const CATEGORIES_ROUTE = `${API_BASE}/?route=category.index`;
 const productCache = new Map();
 const categoryCache = new Map();
 
+//VARIABLES DE PAGINATION
+let currentPage = 1;
+const itemsPerPage = 5; // nombre de produits par page
+let paginatedProducts = []; // produits actuellement paginés
+
+
 // ---------- API ----------
 
 async function fetchProducts() {
@@ -134,9 +140,38 @@ function populateCategorySelect(selectEl) {
   }
 }
 
-function renderList(items) {
+function renderPagination(totalItems, current) {
+  let pagination = document.getElementById("pagination");
+  if (!pagination) {
+    pagination = document.createElement("div");
+    pagination.id = "pagination";
+    document.getElementById("product-list").after(pagination);
+  }
+
+  pagination.innerHTML = "";
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  if (totalPages === 0) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const link = document.createElement("a");
+    link.textContent = i;
+    link.href = "#";
+    if (i === current) link.classList.add("active");
+
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      currentPage = i;
+      renderList(paginatedProducts, currentPage);
+    });
+
+    pagination.appendChild(link);
+  }
+}
+
+function renderList(items, page = 1) {
   const ul = document.getElementById("product-list");
   ul.innerHTML = "";
+
   if (!items.length) {
     const li = document.createElement("li");
     li.className = "list__empty";
@@ -144,7 +179,18 @@ function renderList(items) {
     ul.appendChild(li);
     return;
   }
-  for (const p of items) ul.appendChild(renderItem(p));
+
+  // Pagination
+  const start = (page - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  const pageItems = items.slice(start, end);
+  paginatedProducts = items;
+
+  for (const p of pageItems) {
+    ul.appendChild(renderItem(p));
+  }
+
+  renderPagination(items.length, page);
 }
 
 function renderItem(product) {
@@ -264,23 +310,32 @@ function enterEditMode(li, product) {
   });
 }
 
-// ---------- Init ----------
+// ---------- Init Products ----------
 
 export async function initProducts() {
   const form = document.getElementById("ProductForm");
   const refreshBtn = document.getElementById("refreshProductBtn");
   const listEl = document.getElementById("product-list");
   const categorySelect = document.getElementById("product-category-select");
+  const searchBddInput = document.getElementById("research-bdd");
+  const themeToggle = document.getElementById("theme-toggle");
 
-  try {
+  async function loadInitialData() {
     await fetchCategories();
     populateCategorySelect(categorySelect);
-    renderList(await fetchProducts());
+    const products = await fetchProducts();
+    currentPage = 1;
+    renderList(products, currentPage);
+  }
+
+  try {
+    await loadInitialData();
   } catch (e) {
     console.error(e);
     toast("❌ Erreur chargement Produits/Catégories", true);
   }
 
+  // ---------- Add Product ----------
   form.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     const fd = new FormData(form);
@@ -293,18 +348,17 @@ export async function initProducts() {
         category_id: fd.get("category_id")?.toString().trim() || null,
       });
       form.reset();
-      renderList(await fetchProducts());
+      await loadInitialData();
       toast("✅ Produit ajouté");
     } catch (err) {
       toast("❌ " + (err.message || "Erreur création"), true);
     }
   });
 
+  // ---------- Refresh Products ----------
   refreshBtn.addEventListener("click", async () => {
     try {
-      await fetchCategories();
-      populateCategorySelect(categorySelect);
-      renderList(await fetchProducts());
+      await loadInitialData();
       toast("Liste Produits rafraîchie");
     } catch (e) {
       console.error(e);
@@ -312,7 +366,7 @@ export async function initProducts() {
     }
   });
 
-  // Delegation: Edit/Delete
+  // ---------- Delegation: Edit / Delete ----------
   listEl.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
@@ -330,12 +384,39 @@ export async function initProducts() {
       if (!confirm("Supprimer ce produit ?")) return;
       try {
         await deleteProduct(id);
-        renderList(await fetchProducts());
+        await loadInitialData();
         toast("🗑️ Produit supprimé");
       } catch (err) {
         toast("❌ " + (err.message || "Erreur suppression"), true);
       }
     }
+  });
+
+  // ---------- Theme Toggle ----------
+  themeToggle?.addEventListener("click", () => {
+    const root = document.body;
+    root.setAttribute("data-theme", root.getAttribute("data-theme") === "light" ? "dark" : "light");
+  });
+
+  // ---------- Search Input (Debounced) ----------
+  let searchTimeout;
+  searchBddInput.addEventListener("input", (e) => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(async () => {
+      const query = e.target.value.toLowerCase();
+      try {
+        if (query.length > 0) {
+          renderGlobalResults(await globalSearch(query));
+        } else {
+          const products = await fetchProducts();
+          currentPage = 1;
+          renderList(products, currentPage);
+        }
+      } catch (err) {
+        console.error(err);
+        toast("❌ " + (err.message || "Erreur de recherche"), true);
+      }
+    }, 300); // 300ms debounce
   });
 }
 

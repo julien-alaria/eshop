@@ -10,6 +10,11 @@ const CATEGORIES = {
 
 const categoryCache = new Map();
 
+// VARIABLES DE PAGINATION
+let currentPage = 1;
+const itemsPerPage = 3;
+let paginatedCategories = [];
+
 // --------- API calls ----------
 
 async function fetchCategories() {
@@ -98,7 +103,7 @@ async function editCategory(id, payload) {
 }
 
 async function deleteCategory(id) {
-  // Le controller supprime si $_GET['delete'] est présent -> GET suffit
+
   const res = await fetch(CATEGORIES.delete(id), {
     method: "GET",
     headers: { Accept: "application/json" },
@@ -111,12 +116,13 @@ async function deleteCategory(id) {
     } catch {}
     throw new Error(msg);
   }
-  return res.json(); // {message: "deleted"}
+  return res.json(); 
 }
 
 function renderList(items) {
   const ul = document.getElementById("category-list");
   ul.innerHTML = "";
+
   if (!items.length) {
     const li = document.createElement("li");
     li.className = "list__empty";
@@ -124,9 +130,46 @@ function renderList(items) {
     ul.appendChild(li);
     return;
   }
-  for (const it of items) {
+
+  paginatedCategories = items;
+
+  const start = (currentPage - 1) * itemsPerPage;
+  const end = start + itemsPerPage;
+  const pageItems = items.slice(start, end);
+
+  for (const it of pageItems) {
     const li = renderItem(it);
     ul.appendChild(li);
+  }
+
+  renderPagination(items.length, currentPage);
+}
+
+function renderPagination(totalItems, current) {
+  let pagination = document.getElementById("pagination");
+  if (!pagination) {
+    pagination = document.createElement("div");
+    pagination.id = "pagination";
+    document.getElementById("category-list").after(pagination);
+  }
+
+  pagination.innerHTML = "";
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  if (totalPages <= 1) return;
+
+  for (let i = 1; i <= totalPages; i++) {
+    const link = document.createElement("a");
+    link.textContent = i;
+    link.href = "#";
+    if (i === current) link.classList.add("active");
+
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      currentPage = i;
+      renderList(paginatedCategories);
+    });
+
+    pagination.appendChild(link);
   }
 }
 
@@ -218,7 +261,6 @@ function renderItem(category) {
   li.append(infoDiv, actions);
   return li;
 }
-
 
 // Passe un <li> en mode édition (inline)
 function enterEditMode(li, category) {

@@ -11,7 +11,7 @@
             <div class="mx-auto max-w-7xl space-y-6">
 
                 <nav class="dashboard-nav">
-                    <a href="./stats.html" class="active"><span>🏠</span>Stats</a>
+                    <a href="./stats.html" class="active"><span>🏠</span>Overview</a>
                     <a href="./orders.html"><span>🛒</span>Orders</a>
                     <a href="./products.html"><span>📦</span>Products</a>
                     <a href="./customers.html"><span>👤</span>Customers</a>
@@ -61,9 +61,10 @@
         </div>
         <ul id="category-list" class="list mt-3"></ul>
       </section>
-    
 
-       <footer class="container py-6 text-sm opacity-70">
+      <div id="pagination" class="flex justify-center gap-2 mt-4"></div>
+    
+      <footer class="container py-6 text-sm opacity-70">
       <p>
         Back: <code>php -S localhost:8000 -t public</code> (dans le dossier
         <code>back</code>).

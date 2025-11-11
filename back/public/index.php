@@ -47,6 +47,8 @@ switch ($route) {
     // Stats
     case 'stats.kpis': statsKpis($pdo); break;
     case 'stats.revenue': statsRevenue($pdo); break;
+    case 'stats.top_products': statsTopProducts($pdo); break;
+
 
     // Export
     case 'orders.export': exportOrdersCsv($pdo); break;
