@@ -4,101 +4,113 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="description" content="Gérez vos commandes en ligne. Ajoutez, recherchez et suivez l'état des commandes de vos clients.">
-    <title>Gestion des Commandes - Eshop Dashboard</title> 
+    <title>Gestion des Commandes - Eshop Dashboard</title>
     <link rel="stylesheet" href="../css/style.css" />
   </head>
-    <body data-page="orders"> <div class="min-h-screen bg-gray-50 p-4 md:p-8">
+
+  <body data-page="orders">
+    <div class="min-h-screen bg-gray-50 p-4 md:p-8">
       <div class="mx-auto max-w-7xl space-y-6">
 
+        <!-- Navigation -->
         <header>
-
           <nav class="dashboard-nav" role="navigation">
-              <a href="./stats.html"><span>🏠</span class="sr-only">Overview</a>
-              <a href="./orders.html" class="active"><span>🛒</span class="sr-only">Orders</a>
-              <a href="./products.html"><span>📦</span class="sr-only">Products</a>
-              <a href="./customers.html"><span>👤</span class="sr-only">Customers</a>
-              <a href="./category.html"><span>📂</span class="sr-only">Categories</a>
+            <a href="./stats.html"><span>🏠</span>Overview</a>
+            <a href="./orders.html" class="active"><span>🛒</span>Orders</a>
+            <a href="./products.html"><span>📦</span>Products</a>
+            <a href="./customers.html"><span>👤</span>Customers</a>
+            <a href="./category.html"><span>📂</span>Categories</a>
           </nav>
 
           <button id="themeToggle" class="toggle" aria-label="Basculer le thème">
-              <span class="toggle__label">Light</span>
-              <span class="toggle__track"><span class="toggle__thumb"></span></span>
-              <span class="toggle__label">Dark</span>
+            <span class="toggle__label">Light</span>
+            <span class="toggle__track"><span class="toggle__thumb"></span></span>
+            <span class="toggle__label">Dark</span>
           </button>
-
         </header>
 
         <main class="container grid gap-6">
           <h1 class="text-gray-900 text-2xl fw-700 mb-4">Gestion des Commandes</h1>
 
+          <!-- Recherche -->
           <section class="card">
-
             <h2 class="text-lg fw-600 mb-2">Recherche Commande</h2>
             <form id="orderSearchForm" class="form grid gap-2" onsubmit="return false;">
               <input type="text" id="orderSearchInput" class="input" placeholder="Rechercher une commande...">
             </form>
-
           </section>
 
+          <!-- Ajouter une commande -->
           <section class="card">
-
             <h2 class="text-lg fw-600 mb-2">Ajouter une Commande</h2>
             <form id="OrderForm" method="post" class="form grid gap-3">
-
+              
+              <!-- Client -->
               <div class="grid gap-2">
-                <label for="customer_id" class="label">ID du Client</label>
-                <input id="customer_id" name="customer_id" type="number" class="input" placeholder="123" required/>
-              </div>
-
-              <div class="grid gap-2">
-                <label for="product_id" class="label">Produit</label>
-                <select id="product_id" name="product_id" class="input" required>
-                  <option value="">-- Sélectionner un produit --</option>
+                <label for="customerSelect" class="label">Client</label>
+                <select id="customerSelect" name="customer_id" class="input" required>
+                  <option value="">-- Chargement des clients --</option>
                 </select>
               </div>
 
+              <!-- Produit -->
+              <div class="grid gap-2">
+                <label for="product_id" class="label">Produit</label>
+                <select id="product_id" name="product_id" class="input" required>
+                  <option value="">-- Chargement des produits --</option>
+                </select>
+              </div>
+
+              <!-- Quantité -->
               <div class="grid gap-2">
                 <label for="quantity" class="label">Quantité</label>
                 <input type="number" id="quantity" name="quantity" class="input" value="1" min="1" required>
               </div>
 
+              <!-- Statut -->
               <div class="grid gap-2">
-                <label for="total" class="label">Montant Total (€)</label>
-                <input type="number" step="0.01" id="total" name="total" class="input" placeholder="150.99" required>
+                <label for="statusSelect" class="label">Statut</label>
+                <select id="statusSelect" name="status" class="input" required>
+                  <option value="pending">Pending</option>
+                  <option value="paid">Paid</option>
+                  <option value="refunded">Refunded</option>
+                  <option value="cancelled">Cancelled</option>
+                </select>
               </div>
 
+              <!-- Total -->
               <div class="grid gap-2">
-                <label for="status" class="label">Status de la Commande</label>
-                <input id="status" name="status" type="text" class="input" placeholder="pending / paid / shipped" required/>
+                <label for="total" class="label">Total (€)</label>
+                <input type="number" id="total" name="total" class="input" step="0.01" min="0" placeholder="Sera calculé automatiquement si besoin">
               </div>
 
-              <button class="btn" type="submit">Ajouter la Commande</button>
-              <p id="orderFormMsg" class="text-sm" aria-live="polite"></p> 
-              
+              <!-- Bouton -->
+              <button type="submit" class="btn">Ajouter la Commande</button>
+              <p id="orderFormMsg" class="text-sm" aria-live="polite"></p>
             </form>
-
           </section>
 
+          <!-- Liste des commandes -->
           <section class="card">
-
             <div class="flex items-center justify-between">
-              <h2 class="text-lg fw-600">Mes Commandes</h2> <button id="refreshOrderBtn" class="btn btn-ghost">Rafraîchir</button> 
+              <h2 class="text-lg fw-600">Mes Commandes</h2>
+              <button id="refreshOrderBtn" class="btn btn-ghost">Rafraîchir</button>
             </div>
-            <ul id="order-list" class="list mt-3" aria-live="polite"></ul> 
 
+            <ul id="order-list" class="list mt-3" aria-live="polite"></ul>
           </section>
 
+          <!-- Pagination -->
           <div id="pagination" class="flex justify-center gap-2 mt-4"></div>
-
         </main>
 
-      <footer class="container py-6 text-sm opacity-70">
-          <p>
-            Back: <code>php -S localhost:8000 -t public</code> (dans le dossier
-            <code>back</code>).
-          </p>
-      </footer>
+        <footer class="container py-6 text-sm opacity-70">
+          <p>Back: <code>php -S localhost:8000 -t public</code> (dans le dossier <code>back</code>).</p>
+        </footer>
+      </div>
+    </div>
 
+    <!-- Script principal -->
     <script type="module" src="../assets/script-orders.js" defer></script>
   </body>
 </html>

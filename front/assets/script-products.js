@@ -19,7 +19,7 @@ let paginatedProducts = [];
 
 // ---------- API ----------
 
-export async function fetchProducts() {
+async function fetchProducts() {
   try {
     const res = await fetch(PRODUCTS.indexProduct, { headers: { Accept: "application/json" } });
     const text = await res.text();

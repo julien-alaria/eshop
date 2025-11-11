@@ -1,7 +1,5 @@
 <?php
 
-// --- GET ORDERS ---
-
 function getOrders($pdo){
     $sql = "SELECT o.*, c.name AS customer_name, c.email 
             FROM orders o 
@@ -33,8 +31,6 @@ function getOrderById($pdo, $id){
     return $order;
 }
 
-// --- ADD ORDER ---
-
 function addOrder($pdo, $customer_id, $status = 'pending', $items = []){
     $total = 0;
     foreach ($items as $item) {
@@ -53,18 +49,14 @@ function addOrder($pdo, $customer_id, $status = 'pending', $items = []){
     return $order_id;
 }
 
-// --- ADD ORDER ITEM ---
-
 function addOrderItem($pdo, $order_id, $product_id, $quantity, $unit_price){
     $sql = "INSERT INTO order_items(order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)";
     $stmt = $pdo->prepare($sql);
     $stmt->execute([$order_id, $product_id, $quantity, $unit_price]);
 
-    // update total of the order
+    // Mise à jour du tital commande
     updateOrderTotal($pdo, $order_id);
 }
-
-// --- UPDATE ORDER TOTAL ---
 
 function updateOrderTotal($pdo, $order_id){
     $sql = "SELECT SUM(quantity * unit_price) AS total FROM order_items WHERE order_id = ?";
@@ -76,8 +68,6 @@ function updateOrderTotal($pdo, $order_id){
     $stmt_update = $pdo->prepare($sql_update);
     $stmt_update->execute([$total, $order_id]);
 }
-
-// --- UPDATE ORDER ---
 
 function updateOrder($pdo, $id, $customer_id, $status){
     $validStatuses = ['pending', 'paid', 'refunded', 'cancelled'];
@@ -92,8 +82,6 @@ function updateOrder($pdo, $id, $customer_id, $status){
     return $stmt->execute([$customer_id, $status, $total, $id]);
 }
 
-// --- DELETE ORDER ---
-
 function deleteOrder($pdo, $id){
     $sql_items = "DELETE FROM order_items WHERE order_id = ?";
     $items_stmt = $pdo->prepare($sql_items);
@@ -103,8 +91,6 @@ function deleteOrder($pdo, $id){
     $stmt = $pdo->prepare($sql);
     return $stmt->execute([$id]);
 }
-
-// --- SUM TOTAL ORDER ---
 
 function sumTotalOrder($pdo, $id){
     $sql = "SELECT SUM(quantity * unit_price) AS total FROM order_items WHERE order_id = ?";

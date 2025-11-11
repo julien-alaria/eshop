@@ -25,21 +25,21 @@ function createOrder($pdo){
 
     $customer_id = isset($body['customer_id']) ? (int)$body['customer_id'] : 0;
     $status = $body['status'] ?? null;
-    $total = isset($body['total']) ? (float)$body['total'] : null;
     $items = $body['items'] ?? [];
 
-    if(!$customer_id || !$status || $total === null){
-        respond_error('Missing Fields: customer_id, status, total', 400);
+    if(!$customer_id || !$status){
+        respond_error('Missing Fields: customer_id, status', 400);
     }
 
     try {
-        $order_id = addOrder($pdo, $customer_id, $status, $total, $items);
+        $order_id = addOrder($pdo, $customer_id, $status, $items);
     } catch(Exception $e){
         respond_error($e->getMessage(), 400);
     }
 
     respond_json(['order_id' => $order_id, 'message' => 'Order created successfully'], 201);
 }
+
 
 function editOrder($pdo, $id){
     if(!$id) respond_error('Order ID is required in URL.', 400);
