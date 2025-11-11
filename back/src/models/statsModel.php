@@ -36,7 +36,7 @@ function getDailyRevenue(PDO $pdo): array {
         FROM orders
         WHERE status='paid'
         GROUP BY day
-        ORDER BY day DESC
+        ORDER BY day ASC
         LIMIT 30
     ")->fetchAll(PDO::FETCH_ASSOC);
 }

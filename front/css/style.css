@@ -1,5 +1,5 @@
 /* Minimal utilitaires façon Tailwind + switch animé */
-:root {
+/* :root {
   --bg: #ffffff;
   --fg: #111827;
   --muted: #6b7280;
@@ -110,9 +110,325 @@ body {
   color: var(--muted);
   text-align: center;
 }
-.muted { color: var(--muted); }
+.muted { color: var(--muted); } */
 
 /* Toggle light/dark avec animation switch (gauche Light, droite Dark) */
+/* .toggle {
+  --h: 32px;
+  --w: 72px;
+  --p: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  cursor: pointer;
+  padding: 0;
+}
+.toggle__label { font-size: .9rem; color: var(--muted); }
+.toggle__track {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  background: var(--border);
+  border-radius: var(--h);
+  transition: background .3s ease;
+  display: inline-block;
+}
+.toggle__thumb {
+  position: absolute;
+  top: var(--p);
+  left: var(--p);
+  width: calc(var(--h) - var(--p)*2);
+  height: calc(var(--h) - var(--p)*2);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  transition: transform .25s ease; */
+/* } */
+/* Quand on passe en dark, le thumb glisse à droite */
+/* body[data-theme="dark"] .toggle__track { background: rgba(96,165,250,.35); }
+body[data-theme="dark"] .toggle__thumb { transform: translateX(calc(var(--w) - var(--h))); } */
+
+/* ───────────────────────────────────────────────
+   VARIABLES GLOBALES
+──────────────────────────────────────────────── */
+:root {
+  --bg: #ffffff;
+  --fg: #111827;
+  --muted: #6b7280;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --primary: #111827;
+  --primary-contrast: #ffffff;
+  --accent: #2563eb;
+}
+
+body[data-theme="dark"] {
+  --bg: #0b1020;
+  --fg: #e5e7eb;
+  --muted: #9ca3af;
+  --card: #121a2e;
+  --border: #1f2a44;
+  --primary: #e5e7eb;
+  --primary-contrast: #0b1020;
+  --accent: #60a5fa;
+}
+
+/* ───────────────────────────────────────────────
+   RESET & BASE
+──────────────────────────────────────────────── */
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 10px; padding: 0; }
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, Noto Sans;
+  background: var(--bg);
+  color: var(--fg);
+  transition: background .3s ease, color .3s ease;
+  line-height: 1.5;
+}
+
+/* ───────────────────────────────────────────────
+   UTILITAIRES GLOBAUX
+──────────────────────────────────────────────── */
+.container { max-width: 1200px; margin: 0 auto; padding-inline: 1rem; }
+.grid { display: grid; }
+.flex { display: flex; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: .5rem; }
+.gap-3 { gap: .75rem; }
+.gap-6 { gap: 1.5rem; }
+.mt-3 { margin-top: .75rem; }
+.mb-2 { margin-bottom: .5rem; }
+.py-4 { padding-block: 1rem; }
+.py-6 { padding-block: 1.5rem; }
+.text-2xl { font-size: 1.5rem; line-height: 2rem; }
+.text-lg { font-size: 1.125rem; line-height: 1.75rem; }
+.text-sm { font-size: .875rem; }
+.fw-600 { font-weight: 600; }
+.fw-700 { font-weight: 700; }
+.opacity-70 { opacity: .7; }
+.muted { color: var(--muted); }
+
+/* ───────────────────────────────────────────────
+   NAVIGATION DASHBOARD
+──────────────────────────────────────────────── */
+.dashboard-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  height: 10vh;
+  gap: .75rem;
+  padding: .5rem;
+  border: 5px solid var(--border);
+  margin-bottom: 10px;
+  border-radius: 10px;
+}
+
+.dashboard-nav a {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .5rem 1rem;
+  border-radius: .5rem;
+  color: var(--accent);
+  text-decoration: none;
+  transition: background .2s ease, color .2s ease;
+}
+
+.dashboard-nav a:hover {
+  background: rgba(37,99,235,0.08);
+  color: var(--accent);
+}
+
+.dashboard-nav a.active {
+  background: var(--accent);
+  color: var(--primary-contrast);
+}
+
+/* ───────────────────────────────────────────────
+   CARTES & BLOCS
+──────────────────────────────────────────────── */
+.card,
+.dashboard-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  transition: background .3s ease, border .3s ease, transform .2s ease;
+}
+.dashboard-card:hover { transform: translateY(-2px); }
+
+.dashboard-metrics-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.dashboard-charts-group {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  box-sizing: border-box;
+  padding: 0 1rem;
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.chart-wrapper,
+.doughnut-wrapper,
+.top-wrapper {
+
+  display: flex;
+  align-items: center;
+  justify-content: center; 
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* ───────────────────────────────────────────────
+   FORMULAIRES
+──────────────────────────────────────────────── */
+.label { font-size: .9rem; color: var(--muted); }
+
+.input {
+  width: 100%;
+  padding: .625rem .75rem;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: transparent;
+  color: var(--fg);
+  outline: none;
+  transition: border-color .2s ease, box-shadow .2s ease;
+}
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.25);
+}
+
+/* ───────────────────────────────────────────────
+   BOUTONS
+──────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  padding: .625rem .9rem;
+  border-radius: .75rem;
+  border: 1px solid var(--border);
+  background: var(--primary);
+  color: var(--primary-contrast);
+  cursor: pointer;
+  transition: transform .06s ease, filter .2s ease;
+}
+.btn:hover { filter: brightness(1.05); }
+.btn:active { transform: translateY(1px); }
+.btn-ghost { background: transparent; color: var(--fg); }
+
+/* ───────────────────────────────────────────────
+   LISTES (Produits, Commandes, Clients…)
+──────────────────────────────────────────────── */
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: .75rem;
+  background: var(--card);
+  overflow: hidden;
+}
+
+.list__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border-bottom: 1px solid var(--border);
+  transition: background .2s ease;
+}
+
+.list__item:last-child {
+  border-bottom: none;
+}
+
+.list__item:hover {
+  background: rgba(37, 99, 235, 0.04);
+}
+
+.list__item-content {
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.list__item-content strong {
+  font-weight: 600;
+  color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.list__item-content span {
+  font-size: .875rem;
+  color: var(--muted);
+}
+
+.list__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5rem;
+  flex-shrink: 0;
+}
+
+.list__empty {
+  padding: 1rem;
+  color: var(--muted);
+  text-align: center;
+  border-top: 1px dashed var(--border);
+}
+
+/* Responsive */
+
+@media (max-width: 1050px) {
+  .dashboard-metrics-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  }
+  .dashboard-charts-group {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+  }
+}
+@media (max-width: 640px) {
+  .list__item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .5rem;
+  }
+  .list__actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* ───────────────────────────────────────────────
+   TOGGLE LIGHT/DARK
+──────────────────────────────────────────────── */
 .toggle {
   --h: 32px;
   --w: 72px;
@@ -147,6 +463,13 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,.15);
   transition: transform .25s ease;
 }
-/* Quand on passe en dark, le thumb glisse à droite */
 body[data-theme="dark"] .toggle__track { background: rgba(96,165,250,.35); }
 body[data-theme="dark"] .toggle__thumb { transform: translateX(calc(var(--w) - var(--h))); }
+
+/* ───────────────────────────────────────────────
+   RÉPONSIVE GÉNÉRAL
+──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .dashboard-nav { justify-content: center; }
+  .dashboard-card, .card { padding: 1rem; }
+}

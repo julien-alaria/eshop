@@ -130,27 +130,74 @@ function renderList(items) {
   }
 }
 
+// function renderItem(category) {
+//   const li = document.createElement("li");
+//   li.className = "list__item";
+//   li.dataset.id = String(category.id);
+
+//   const title = document.createElement("strong");
+//   title.textContent = category.name || "(Sans titre)";
+
+//   const content = document.createElement("p");
+//   content.className = "content-class";
+//   content.textContent = category.id || "";
+
+//   const small = document.createElement("small");
+//   small.className = "muted";
+//   const dt = category.created_at ? new Date(category.created_at) : null;
+//   small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
+
+//   // Actions: Éditer / Supprimer
+//   const actions = document.createElement("div");
+//   actions.style.display = "flex";
+//   actions.style.gap = ".5rem";
+//   actions.style.marginTop = ".25rem";
+
+//   const editBtn = document.createElement("button");
+//   editBtn.type = "button";
+//   editBtn.className = "btn btn-ghost";
+//   editBtn.textContent = "Éditer";
+//   editBtn.dataset.action = "edit";
+//   editBtn.dataset.id = String(category.id);
+
+//   const delBtn = document.createElement("button");
+//   delBtn.type = "button";
+//   delBtn.className = "btn btn-ghost";
+//   delBtn.textContent = "Supprimer";
+//   delBtn.dataset.action = "delete";
+//   delBtn.dataset.id = String(category.id);
+
+//   actions.append(editBtn, delBtn);
+
+//   li.append(title, content, small, actions);
+//   return li;
+// }
+
 function renderItem(category) {
   const li = document.createElement("li");
   li.className = "list__item";
   li.dataset.id = String(category.id);
 
+  // Conteneur pour ID + Nom
+  const infoDiv = document.createElement("div");
+  infoDiv.style.display = "flex";
+  infoDiv.style.alignItems = "center";
+  infoDiv.style.gap = "0.5rem";
+
+  const content = document.createElement("p");
+  content.className = "content-class";
+  content.textContent = category.id || "";
+
   const title = document.createElement("strong");
   title.textContent = category.name || "(Sans titre)";
 
-  const content = document.createElement("p");
-  content.textContent = category.id || "";
-
-  const small = document.createElement("small");
-  small.className = "muted";
-  const dt = category.created_at ? new Date(category.created_at) : null;
-  small.textContent = dt && !isNaN(dt) ? dt.toLocaleString() : "";
+  infoDiv.append(content, title);
 
   // Actions: Éditer / Supprimer
   const actions = document.createElement("div");
   actions.style.display = "flex";
   actions.style.gap = ".5rem";
-  actions.style.marginTop = ".25rem";
+  actions.style.marginLeft = "auto"; // pousse à droite
 
   const editBtn = document.createElement("button");
   editBtn.type = "button";
@@ -168,9 +215,10 @@ function renderItem(category) {
 
   actions.append(editBtn, delBtn);
 
-  li.append(title, content, small, actions);
+  li.append(infoDiv, actions);
   return li;
 }
+
 
 // Passe un <li> en mode édition (inline)
 function enterEditMode(li, category) {

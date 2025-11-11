@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Notes — Front</title>
+    <title>Stats</title>
     <link rel="stylesheet" href="../css/style.css" />
   </head>
     <body data-page="stats">
@@ -26,14 +26,11 @@
 
                 <div class="flex items-center justify-between">
                     <div>
-                    <h1 class="text-gray-900 text-2xl fw-700">Fujifilm Camera Dashboard</h1>
-                    <p class="text-gray-600">Manage your camera inventory and orders</p>
-                    </div>
-                    <div class="flex items-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-red-500 px-4 py-2">
-                    <span class="text-white">FUJIFILM</span>
+                    <h1 class="text-gray-900 text-2xl fw-700">Eshop Dashboard</h1>
+                    <p class="text-gray-600">Manage your inventory and orders</p>
                     </div>
                 </div>
-
+                    
                 <div class="dashboard-metrics-group">
                     <div class="dashboard-card">
                     <div class="text-muted">Total Revenue</div>
@@ -61,19 +58,25 @@
 
                     <div class="dashboard-card">
                         <h3 class="fw-600 mb-2">Daily Revenue</h3>
-                        <canvas id="dailyRevenueChart" height="220"></canvas>
+                        <div class="chart-wrapper">
+                            <canvas id="dailyRevenueChart" height="220"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="dashboard-card">
+                        <h3 class="fw-600 mb-2">Order Status Distribution</h3>
+                        <div class="doughnut-wrapper">
+                            <canvas id="orderStatusChart" height="220"></canvas>
+                        </div>
                     </div>
 
                     <div class="dashboard-card">
-                        <h3 class="fw-600 mb-2">Order Status Distribution</h3>
-                        <canvas id="orderStatusChart" height="220"></canvas>
-                    </div>
-                    <div class="dashboard-chartTop">
-                        <div class="dashboard-card">
-                            <h3 class="fw-600 mb-2">Top-Selling Products</h3>
+                        <h3 class="fw-600 mb-2">Top-Selling Products</h3>
+                        <div class="top-wrapper">
+                            <canvas id="topProductsChart" height="220"></canvas>
                         </div>
-                        <canvas id="topProductsChart" height="220"></canvas>
                     </div>
+                   
                 </div>
             </div>
         </div>
