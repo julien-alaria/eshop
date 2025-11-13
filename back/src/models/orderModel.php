@@ -1,5 +1,7 @@
 <?php
 
+// ----------------- LIST / SHOW -----------------
+
 function getOrders($pdo){
     $sql = "SELECT o.*, c.name AS customer_name, c.email 
             FROM orders o 
@@ -31,71 +33,124 @@ function getOrderById($pdo, $id){
     return $order;
 }
 
-function addOrder($pdo, $customer_id, $status = 'pending', $items = []){
-    $total = 0;
-    foreach ($items as $item) {
-        $total += $item['quantity'] * $item['unit_price'];
+// ----------------- CREATE ORDER -----------------
+
+function addOrder($pdo, $customer_id, $status = 'pending', $items = []) {
+    if (!$customer_id || !$status || empty($items)) {
+        throw new InvalidArgumentException("customer_id, status et items sont requis.");
     }
 
-    $sql = "INSERT INTO orders(customer_id, status, total) VALUES (?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$customer_id, $status, $total]);
-    $order_id = $pdo->lastInsertId();
+    $pdo->beginTransaction();
+    try {
+        // Créer la commande avec total = 0
+        $stmt = $pdo->prepare("INSERT INTO orders (customer_id, status, total) VALUES (?, ?, 0)");
+        $stmt->execute([$customer_id, $status]);
+        $order_id = $pdo->lastInsertId();
 
-    foreach ($items as $item) {
-        addOrderItem($pdo, $order_id, $item['product_id'], $item['quantity'], $item['unit_price']);
+        // Ajouter tous les items
+        foreach ($items as $item) {
+            $product_id = (int)$item['product_id'];
+            $quantity   = (int)$item['quantity'];
+
+            $stmtProd = $pdo->prepare("SELECT price FROM products WHERE id = ?");
+            $stmtProd->execute([$product_id]);
+            $unit_price = (float)$stmtProd->fetchColumn();
+
+            addOrderItem($pdo, $order_id, $product_id, $quantity, $unit_price, false);
+        }
+
+        // Calculer le total après avoir ajouté tous les items
+        updateOrderTotal($pdo, $order_id);
+
+        $pdo->commit();
+        return $order_id;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
     }
-
-    return $order_id;
 }
 
-function addOrderItem($pdo, $order_id, $product_id, $quantity, $unit_price){
-    $sql = "INSERT INTO order_items(order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)";
-    $stmt = $pdo->prepare($sql);
+// ----------------- ADD ITEM -----------------
+
+function addOrderItem($pdo, $order_id, $product_id, $quantity, $unit_price, $updateTotal = true) {
+    $stmt = $pdo->prepare("INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (?, ?, ?, ?)");
     $stmt->execute([$order_id, $product_id, $quantity, $unit_price]);
 
-    // Mise à jour du tital commande
-    updateOrderTotal($pdo, $order_id);
+    if($updateTotal) {
+        updateOrderTotal($pdo, $order_id);
+    }
 }
 
-function updateOrderTotal($pdo, $order_id){
-    $sql = "SELECT SUM(quantity * unit_price) AS total FROM order_items WHERE order_id = ?";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$order_id]);
-    $total = $stmt->fetchColumn() ?? 0;
+// ----------------- UPDATE TOTAL -----------------
 
-    $sql_update = "UPDATE orders SET total = ? WHERE id = ?";
-    $stmt_update = $pdo->prepare($sql_update);
+function updateOrderTotal($pdo, $order_id) {
+    $stmt = $pdo->prepare("SELECT SUM(quantity * unit_price) AS total FROM order_items WHERE order_id = ?");
+    $stmt->execute([$order_id]);
+    $total = (float)($stmt->fetchColumn() ?? 0);
+
+    $stmt_update = $pdo->prepare("UPDATE orders SET total = ? WHERE id = ?");
     $stmt_update->execute([$total, $order_id]);
 }
 
-function updateOrder($pdo, $id, $customer_id, $status){
+// ----------------- DELETE -----------------
+
+function deleteOrder($pdo, $id){
+    $pdo->beginTransaction();
+    try {
+        $stmt_items = $pdo->prepare("DELETE FROM order_items WHERE order_id = ?");
+        $stmt_items->execute([$id]);
+
+        $stmt_order = $pdo->prepare("DELETE FROM orders WHERE id = ?");
+        $stmt_order->execute([$id]);
+
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        return false;
+    }
+}
+
+// ----------------- SUM TOTAL -----------------
+
+function sumTotalOrder($pdo, $id){
+    $stmt = $pdo->prepare("SELECT SUM(quantity * unit_price) AS total FROM order_items WHERE order_id = ?");
+    $stmt->execute([$id]);
+    $result = $stmt->fetch(PDO::FETCH_ASSOC);
+    return (float)($result['total'] ?? 0);
+}
+
+// ----------------- UPDATE ORDER -----------------
+
+function updateOrder($pdo, $id, $customer_id, $status, $items = null){
     $validStatuses = ['pending', 'paid', 'refunded', 'cancelled'];
     if (!in_array($status, $validStatuses)) {
         throw new InvalidArgumentException("Status '$status' invalide. Doit être : " . implode(', ', $validStatuses));
     }
 
-    $total = sumTotalOrder($pdo, $id);
+    $pdo->beginTransaction();
+    try {
+        // Mettre à jour le client et le statut
+        $stmt = $pdo->prepare("UPDATE orders SET customer_id = ?, status = ? WHERE id = ?");
+        $stmt->execute([$customer_id, $status, $id]);
 
-    $sql = "UPDATE orders SET customer_id = ?, status = ?, total = ? WHERE id = ?";
-    $stmt = $pdo->prepare($sql);
-    return $stmt->execute([$customer_id, $status, $total, $id]);
-}
+        // Si des items sont fournis, les remplacer
+        if (is_array($items)) {
+            $stmtDel = $pdo->prepare("DELETE FROM order_items WHERE order_id = ?");
+            $stmtDel->execute([$id]);
 
-function deleteOrder($pdo, $id){
-    $sql_items = "DELETE FROM order_items WHERE order_id = ?";
-    $items_stmt = $pdo->prepare($sql_items);
-    $items_stmt->execute([$id]);
+            foreach ($items as $item) {
+                addOrderItem($pdo, $id, $item['product_id'], $item['quantity'], $item['unit_price'], false);
+            }
+        }
 
-    $sql = "DELETE FROM orders WHERE id = ?";
-    $stmt = $pdo->prepare($sql);
-    return $stmt->execute([$id]);
-}
+        // Recalculer le total après modification
+        updateOrderTotal($pdo, $id);
 
-function sumTotalOrder($pdo, $id){
-    $sql = "SELECT SUM(quantity * unit_price) AS total FROM order_items WHERE order_id = ?";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([$id]);
-    $result = $stmt->fetch(PDO::FETCH_ASSOC);
-    return $result['total'] ?? 0;
+        $pdo->commit();
+        return true;
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw $e;
+    }
 }
