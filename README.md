@@ -200,9 +200,3 @@ Filtrage par date ou montant
 Ajout de graphiques pour visualiser les ventes
 
 Support multi-utilisateurs avec authentification
-
-👨‍💻 Auteur
-
-Nom : Ton Nom
-
-Projet pédagogique / Démo de gestion de commandes
