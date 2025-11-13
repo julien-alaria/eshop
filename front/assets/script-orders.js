@@ -1,6 +1,7 @@
 import { API_BASE, toast } from "./scripts-base.js";
 
 // --------- ROUTES API ----------
+
 const ROUTES = {
   index: `${API_BASE}/?route=orders.list`,
   create: `${API_BASE}/?route=orders.create`,
@@ -20,30 +21,15 @@ const ROUTES_CUSTOMERS = {
 };
 
 // --------- VARIABLES GLOBALES ----------
+
 const orderCache = new Map();
 const validStatuses = ["pending", "paid", "refunded", "cancelled"];
 let orderPage = 1;
 const ordersPerPage = 3;
 let paginatedOrders = [];
 
-// --------- UTILITAIRES ----------
-function createInput(labelText, name, type = "text", value = "", step) {
-  const label = document.createElement("label");
-  label.className = "label";
-  label.textContent = labelText;
-
-  const input = document.createElement("input");
-  input.className = "input";
-  input.name = name;
-  input.type = type;
-  input.value = value ?? "";
-  if (step) input.step = step;
-  input.required = true;
-
-  return { label, input };
-}
-
 // --------- API CALLS ----------
+
 export async function fetchOrders() {
   const res = await fetch(ROUTES.index, { headers: { Accept: "application/json" } });
   if (!res.ok) throw new Error("Erreur GET Orders");
@@ -57,18 +43,10 @@ export async function fetchOrders() {
 }
 
 async function createOrder(payload) {
-  const body = new URLSearchParams({
-    product_id: Number(payload.product_id) || 0,
-    customer_id: Number(payload.customer_id) || 0,
-    status: (payload.status || "pending").toString(),
-    total: Number(payload.total) || 0,
-    quantity: Number(payload.quantity) || 1
-  });
-
   const res = await fetch(ROUTES.create, {
     method: "POST",
-    headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8" },
-    body,
+    headers: { "Accept": "application/json", "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
   });
 
   if (!res.ok) {
@@ -82,11 +60,11 @@ async function createOrder(payload) {
   return res.json();
 }
 
+
 async function editOrder(id, payload) {
   const body = new URLSearchParams({
     customer_id: Number(payload.customer_id) || 0,
     status: (payload.status || "pending").toString(),
-    total: Number(payload.total) || 0,
   });
 
   const res = await fetch(ROUTES.edit(id), {
@@ -120,6 +98,7 @@ export async function deleteOrder(id) {
 }
 
 // --- Fetch produits ---
+
 let products = [];
 
 async function fetchProducts() {
@@ -138,6 +117,7 @@ async function fetchProducts() {
 }
 
 // --- Remplir le select des produits ---
+
 async function populateProductSelect(selectId = "product_id") {
   const select = document.getElementById(selectId);
   if (!select) return;
@@ -145,18 +125,11 @@ async function populateProductSelect(selectId = "product_id") {
   const data = await fetchProducts();
   select.innerHTML =
     `<option value="">-- Choisir un produit --</option>` +
-    data
-      .map(
-        (p) =>
-          `<option value="${p.id}" data-price="${p.price}">
-            ${p.title || "Produit"} - ${p.price}€
-          </option>`
-      )
-      .join("");
+    data.map((p) =>`<option value="${p.id}" data-price="${p.price}">${p.title || "Produit"} - ${p.price}€</option>`).join("");
 }
 
-
 // --- Fetch clients ---
+
 async function fetchCustomers() {
   try {
     const res = await fetch(ROUTES_CUSTOMERS.indexCustomer, { headers: { Accept: "application/json" } });
@@ -168,6 +141,8 @@ async function fetchCustomers() {
     return [];
   }
 }
+
+// --- Remplir le select des clients ---
 
 async function populateCustomerSelect(selectId = "customerSelect") {
   const select = document.getElementById(selectId);
@@ -183,29 +158,10 @@ async function populateCustomerSelect(selectId = "customerSelect") {
   }
 }
 
-// --------- TOTAL CALCUL AUTOMATIQUE ---------
-async function updateTotal() {
-  const productSelect = document.getElementById("product_id");
-  const quantityInput = document.getElementById("quantity");
-  const totalInput = document.getElementById("total");
-
-  if (!productSelect || !quantityInput || !totalInput) return;
-
-  const productId = productSelect.value;
-  const quantity = parseInt(quantityInput.value) || 1;
-
-  if (!productId) {
-    totalInput.value = 0;
-    return;
-  }
-
-  const products = await fetchProducts();
-  const product = products.find(p => p.id == productId);
-  totalInput.value = product ? (product.price * quantity).toFixed(2) : 0;
-}
-
 // --------- RENDER / UI ----------
+
 export function renderItem(order) {
+
   const li = document.createElement("li");
   li.className = "list__item";
   li.dataset.id = String(order.id);
@@ -246,6 +202,7 @@ export function renderItem(order) {
 }
 
 export function renderList(items) {
+
   const ul = document.getElementById("order-list");
   ul.innerHTML = "";
 
@@ -266,6 +223,7 @@ export function renderList(items) {
 }
 
 export function renderPagination(totalItems) {
+
   let pagination = document.getElementById("pagination");
   if (!pagination) {
     pagination = document.createElement("div");
@@ -292,6 +250,7 @@ export function renderPagination(totalItems) {
 }
 
 function initSearch(inputSelector, cache, renderFn) {
+
   const input = document.querySelector(inputSelector);
   if (!input) return;
 
@@ -308,14 +267,28 @@ function initSearch(inputSelector, cache, renderFn) {
   });
 }
 
-export function enterEditMode(li, order) {
+export async function enterEditMode(li, order) {
   li.innerHTML = "";
+
   const form = document.createElement("form");
   form.className = "grid gap-2";
 
-  const customerInput = createInput("ID Client", "customer_id", "number", order.customer_id);
-  const totalInput = createInput("Total (€)", "total", "number", order.total, "0.01");
+  // --- Select Client ---
+  const customerLabel = document.createElement("label");
+  customerLabel.className = "label";
+  customerLabel.textContent = "Client";
 
+  const customerSelect = document.createElement("select");
+  customerSelect.className = "input";
+  customerSelect.name = "customer_id";
+  customerSelect.required = true;
+
+  // Remplir le select avec les clients
+  const customers = await fetchCustomers();
+  customerSelect.innerHTML = `<option value="">-- Choisir un client --</option>` +
+    customers.map(c => `<option value="${c.id}" ${c.id === order.customer_id ? "selected" : ""}>${c.name || c.fullname || c.email}</option>`).join("");
+
+  // --- Champ statut ---
   const statusLabel = document.createElement("label");
   statusLabel.className = "label";
   statusLabel.textContent = "Statut";
@@ -324,6 +297,7 @@ export function enterEditMode(li, order) {
   statusSelect.className = "input";
   statusSelect.name = "status";
   statusSelect.required = true;
+
   const currentStatus = validStatuses.includes(String(order.status)) ? order.status : "pending";
   validStatuses.forEach(s => {
     const opt = document.createElement("option");
@@ -333,6 +307,7 @@ export function enterEditMode(li, order) {
     statusSelect.appendChild(opt);
   });
 
+  // --- Boutons ---
   const row = document.createElement("div");
   row.style.display = "flex";
   row.style.gap = ".5rem";
@@ -348,16 +323,17 @@ export function enterEditMode(li, order) {
   cancelBtn.textContent = "Annuler";
 
   row.append(saveBtn, cancelBtn);
-  form.append(customerInput.label, customerInput.input, statusLabel, statusSelect, totalInput.label, totalInput.input, row);
+  // --- Assemblage form ---
+  form.append(customerLabel, customerSelect, statusLabel, statusSelect, row);
   li.append(form);
 
+  // --- Soumission du formulaire ---
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     try {
       await editOrder(order.id, {
-        customer_id: customerInput.input.value.trim(),
+        customer_id: customerSelect.value.trim(),
         status: statusSelect.value.trim(),
-        total: totalInput.input.value.trim(),
       });
       renderList(await fetchOrders());
       toast("✅ Modifié", false, "orderFormMsg");
@@ -366,112 +342,16 @@ export function enterEditMode(li, order) {
     }
   });
 
+  // --- Annuler ---
   cancelBtn.addEventListener("click", () => {
     li.replaceWith(renderItem(orderCache.get(String(order.id)) || order));
   });
 }
 
-// --------- INIT ORDERS ----------
-// export async function initOrders() {
-//   const form = document.getElementById("OrderForm");
-//   const refreshBtn = document.getElementById("refreshOrderBtn");
-//   const listEl = document.getElementById("order-list");
-//   const currentTheme = localStorage.getItem("theme") || "light";
-//   document.body.setAttribute("data-theme", currentTheme);
-
-//   try { renderList(await fetchOrders()); } 
-//   catch (e) { console.error(e); toast("x Erreur au chargement des commandes.", true, "orderFormMsg"); }
-
-//   await populateProductSelect();
-//   await populateCustomerSelect();
-//   initSearch("#orderSearchInput", orderCache, renderList);
-
-//   // --- CALCUL TOTAL AU CHANGEMENT ---
-//   const productSelect = document.getElementById("product_id");
-//   const quantityInput = document.getElementById("quantity");
-//   productSelect?.addEventListener("change", updateTotal);
-//   quantityInput?.addEventListener("input", updateTotal);
-
-//   // --- AJOUT COMMANDE ---
-//   form?.addEventListener("submit", async (ev) => {
-//     ev.preventDefault();
-//     const fd = new FormData(form);
-
-//     // Récupération du produit sélectionné
-//     const productId = fd.get("product_id");
-//     const product = products.find(p => p.id == productId); // récupère le bon produit
-//     if (!product) {
-//       toast("❌ Produit introuvable", true, "orderFormMsg");
-//       return;
-//     }
-
-//     const payload = {
-//       customer_id: fd.get("customer_id"),
-//       status: fd.get("status"),
-//       items: [
-//         {
-//           product_id: product.id,
-//           quantity: Number(fd.get("quantity")),
-//           unit_price: Number(product.price) // 👈 ICI le prix correct
-//         }
-//       ]
-//     };
-
-//     try {
-//       await createOrder(payload);
-//       form.reset();
-//       renderList(await fetchOrders());
-//       toast("✅ Commande ajoutée avec succès", false, "orderFormMsg");
-//     } catch (e) {
-//       toast("❌ " + e.message, true, "orderFormMsg");
-//     }
-//   });
-
-//   refreshBtn?.addEventListener("click", async () => {
-//     try {
-//       renderList(await fetchOrders());
-//       toast("Liste Commandes rafraîchie", false, "orderFormMsg");
-//     } catch (e) {
-//       console.error(e);
-//       toast("x Echec rafraîchissement", true, "orderFormMsg");
-//     }
-//   });
-
-//   listEl?.addEventListener("click", async (e) => {
-//     const btn = e.target.closest("button[data-action]");
-//     if (!btn) return;
-//     const id = btn.dataset.id;
-//     if (!id) return;
-
-//     if (btn.dataset.action === "edit") {
-//       const li = btn.closest("li");
-//       const order = orderCache.get(String(id));
-//       if (!li || !order) return;
-//       enterEditMode(li, order);
-//     }
-
-//     if (btn.dataset.action === "delete") {
-//       if (!confirm("Supprimer cette commande ?")) return;
-//       try {
-//         await deleteOrder(id);
-//         renderList(await fetchOrders());
-//         toast("🗑️ Supprimé", false, "orderFormMsg");
-//       } catch (err) {
-//         toast("❌ " + (err?.message || "Erreur suppression"), true, "orderFormMsg");
-//       }
-//     }
-//   });
-
-//   const themeToggle = document.getElementById("themeToggle");
-//   themeToggle?.addEventListener("click", () => {
-//     const root = document.body;
-//     const newTheme = root.getAttribute("data-theme") === "light" ? "dark" : "light";
-//     root.setAttribute("data-theme", newTheme);
-//     localStorage.setItem("theme", newTheme);
-//   });
-// }
+// --------------------- INIT --------------------------------
 
 export async function initOrders() {
+
   const form = document.getElementById("OrderForm");
   const refreshBtn = document.getElementById("refreshOrderBtn");
   const listEl = document.getElementById("order-list");
@@ -479,6 +359,7 @@ export async function initOrders() {
   document.body.setAttribute("data-theme", currentTheme);
 
   // --- Fetch et affichage initial des commandes ---
+
   try {
     renderList(await fetchOrders());
   } catch (e) {
@@ -487,70 +368,97 @@ export async function initOrders() {
   }
 
   // --- Populate selects ---
+
   await populateProductSelect();
   await populateCustomerSelect();
 
   // --- Init recherche ---
+
   initSearch("#orderSearchInput", orderCache, renderList);
 
   // --- CALCUL TOTAL AU CHANGEMENT ---
+
   const productSelect = document.getElementById("product_id");
   const quantityInput = document.getElementById("quantity");
-  const totalInput = document.getElementById("total");
 
-  async function updateTotal() {
-    if (!productSelect || !quantityInput || !totalInput) return;
-    const productId = productSelect.value;
-    const quantity = parseInt(quantityInput.value) || 1;
-    if (!productId) {
-      totalInput.value = 0;
-      return;
+  // Crée un <p> pour afficher le total
+  let totalDisplay = document.getElementById("totalDisplay");
+    if (!totalDisplay) {
+      totalDisplay = document.createElement("p");
+      totalDisplay.id = "totalDisplay";
+      totalDisplay.className = "text-sm fw-600";
+      quantityInput.parentElement.appendChild(totalDisplay);
     }
-    const product = products.find(p => p.id == productId);
-    totalInput.value = product ? (product.price * quantity).toFixed(2) : 0;
+    totalDisplay.textContent = "Total: 0.00€";
+
+    function updateTotal() {
+    const productId = parseInt(productSelect.value); // force Number
+    const quantity = parseInt(quantityInput.value) || 1;
+    const product = products.find(p => p.id === productId);
+
+    const total = product ? (product.price * quantity).toFixed(2) : "0.00";
+    totalDisplay.textContent = `Total: ${total}€`;
   }
 
   productSelect?.addEventListener("change", updateTotal);
   quantityInput?.addEventListener("input", updateTotal);
 
-  // --- AJOUT COMMANDE ---
+   // --- Création commande ---
+
   form?.addEventListener("submit", async (ev) => {
     ev.preventDefault();
     if (!form) return;
 
     const fd = new FormData(form);
-    const productId = fd.get("product_id");
-    const product = products.find(p => p.id == productId);
+    const productId = Number(fd.get("product_id"));
+    const quantity = Number(fd.get("quantity")) || 1;
+    const product = products.find(p => p.id === productId);
 
     if (!product) {
       toast("❌ Produit introuvable", true, "orderFormMsg");
       return;
     }
 
-    const payload = {
-      customer_id: fd.get("customer_id"),
+    // ⚠️ URLSearchParams pour correspondre à ce que ton API attend
+    const body = new URLSearchParams({
+      customer_id: String(fd.get("customer_id")),
       status: fd.get("status"),
-      items: [
-        {
-          product_id: product.id,
-          quantity: Number(fd.get("quantity")),
-          unit_price: Number(product.price)
-        }
-      ]
-    };
+      product_id: String(productId),
+      quantity: String(quantity),
+      unit_price: String(product.price)
+    });
 
     try {
-      await createOrder(payload);
+      const res = await fetch(ROUTES.create, {
+        method: "POST",
+        headers: {
+          "Accept": "application/json",
+          "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+        },
+        body
+      });
+
+      if (!res.ok) {
+        let msg = "Erreur création commande";
+        try {
+          const e = await res.json();
+          msg = e.message || e.error || msg;
+        } catch {}
+        throw new Error(msg);
+      }
+
       form.reset();
-      totalInput.value = 0;
+      updateTotal();
       renderList(await fetchOrders());
       toast("✅ Commande ajoutée avec succès", false, "orderFormMsg");
+
     } catch (e) {
       toast("❌ " + (e?.message || "Erreur création commande"), true, "orderFormMsg");
     }
   });
 
   // --- Refresh commandes ---
+
   refreshBtn?.addEventListener("click", async () => {
     try {
       renderList(await fetchOrders());
@@ -562,6 +470,7 @@ export async function initOrders() {
   });
 
   // --- Gestion Edit / Delete ---
+
   listEl?.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-action]");
     if (!btn) return;
@@ -596,7 +505,6 @@ export async function initOrders() {
     localStorage.setItem("theme", newTheme);
   });
 }
-
 
 // --------- DOM READY ----------
 document.addEventListener("DOMContentLoaded", initOrders);
