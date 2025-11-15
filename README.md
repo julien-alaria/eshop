@@ -1,6 +1,6 @@
 # Presentation de l'application
 
-# PANEL ADMIN
+# ADMIN PANEL
 
 Un panel d'administration pour gérer un e-shop avec architecture MVC. 
 Il permet de gérer les catégories, produits, clients, commandes et statistiques. Le projet inclut un système de migration de base de données pour faciliter les mises à jour.
