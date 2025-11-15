@@ -274,6 +274,13 @@ body[data-theme="dark"] {
   pointer-events: none;
 }
 
+/* MODAL */
+#global-search-results {
+  display: flex;
+  align-items: center;
+  justify-content: center;  
+}
+
 /* TOGGLE LIGHT/DARK */
 
 .toggle {
