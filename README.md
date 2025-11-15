@@ -10,30 +10,28 @@ Il permet de gérer les catégories, produits, clients, commandes et statistique
 - **Gestion complète des catégories et produits**
 - **Gestion des clients et de leurs informations**
 - **Gestion des commandes (un produit par commande)**
-- **Recherche et filtrage des données (directement en base de données pour la recherche globale sur la page des stats.html et au niveau de l'affichage pour les autres pages)**
+- **Recherche et filtrage des données (directement en base de données pour la recherche globale sur la page stats.html et au niveau de l'affichage pour les autres pages)**
 - **Export des données (Implémentation en cours)**
 - **Statistiques et rapports** 
 
 ## Technologies Utilisées
 
-- **PHP 8+**
+- **PHP pour le back-end**
 - **SQLite comme base de données légère**
 - **HTML / CSS / JavaScript pour le front-end**
-- **PHP pour le back-end**
-- **Architecture MVC(Model-View-Controller)**
 - **Outil de migration personnalisé : tonton**
 
 # Installation
 
 1. **Cloner le dépôt GIT**
 
-git clone https://github.com/julien-alaria/eshop
+git clone https://github.com/julien-alaria/admin_panel
 
-2. **Lancer un serveur PHP local (depuis le dossier du projet)**
+2. **Lancer un serveur PHP local (depuis le dossier back du projet)**
 
-php -S localhost8000 -t public
+php -S localhost:8000 -t public
 
-le fichier stats.php est le point d'entrée de l'application
+le fichier index.php est le point d'entrée de l'application
 
 3. **Accéder à l'application dans votre navigateur:**
 
