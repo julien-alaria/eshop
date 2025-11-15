@@ -50,25 +50,23 @@ L'application suit le modèle MVC en séparant:
 
 ![presentation](img/eshop_screenshot1.png)
 
-http://localhost:8000
-
 ## Structure du Projet
 
 back/
-├─ migration/            # Scripts de migration
-├─ public/index.php      # Point d'entrée
-├─ src/
-│   ├─ controllers/      # Contrôleurs
-│   ├─ helpers/          # Fonctions utilitaires
-│   └─ models/           # Modèles
-├─ database.sqlite       # Base de données SQLite
-├─ structure.sql         # Structure initiale de la base de données
-├─ MIGRATIONS.md         # Historique des migrations
-├─ tonton                # Outil de migration
+ ├─ migration/            # Scripts de migration
+ ├─ public/index.php      # Point d'entrée
+ ├─ src/
+ │   ├─ controllers/      # Contrôleurs
+ │   ├─ helpers/          # Fonctions utilitaires
+ │   └─ models/           # Modèles
+ ├─ database.sqlite       # Base de données SQLite
+ ├─ structure.sql         # Structure initiale de la base de données
+ ├─ MIGRATIONS.md         # Historique des migrations
+ ├─ tonton                # Outil de migration
 front/
-├─ assets/               # JS
-├─ css/
-├─ views/                # Pages HTML
+ ├─ assets/               # JS
+ ├─ css/
+ ├─ views/                # Pages HTML
 README.md
 
 
